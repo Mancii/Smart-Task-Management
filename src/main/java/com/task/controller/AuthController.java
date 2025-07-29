@@ -20,14 +20,14 @@ public class AuthController {
     private final TokenService tokenService;
     private final JwtUserDetailsService jwtUserDetailsService;
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthenticationRequest request) {
-        return ResponseEntity.ok(authService.login(request));
-    }
-
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> create(@RequestBody @Valid AuthenticationRequest request) {
         return ResponseEntity.ok(authService.register(request));
+    }
+
+    @PostMapping("/authenticate")
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthenticationRequest request) {
+        return ResponseEntity.ok(authService.login(request));
     }
 
     @PostMapping("/resetPassword")
