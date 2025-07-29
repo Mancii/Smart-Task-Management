@@ -20,10 +20,10 @@ public class JwtService {
     @Value("${jwt.secret}")
     private String secret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.access.token.validity}")
     private long jwtExpirationMs;
 
-    @Value("${jwt.refreshExpiration}")
+    @Value("${jwt.refresh.token.validity}")
     private long refreshExpirationMs;
 
     SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);

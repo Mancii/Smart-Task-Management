@@ -1,7 +1,7 @@
 package com.task.config;
 
 import com.task.entity.User;
-import com.task.service.CustomUserDetailsService;
+import com.task.service.JwtUserDetailsService;
 import com.task.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -29,10 +29,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthFilter.class);
     private final JwtService jwtService;
-    private final CustomUserDetailsService userDetailService;
+    private final JwtUserDetailsService userDetailService;
 
     @Autowired
-    public JwtAuthFilter(JwtService jwtService, CustomUserDetailsService userDetailService) {
+    public JwtAuthFilter(JwtService jwtService, JwtUserDetailsService userDetailService) {
         this.jwtService = jwtService;
         this.userDetailService = userDetailService;
     }
