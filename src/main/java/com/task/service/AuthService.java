@@ -19,6 +19,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper mapper;
+    private final TokenService tokenService;
 
     public AuthResponse register(AuthenticationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -38,6 +39,8 @@ public class AuthService {
         var jwtToken = jwtService.generateToken(userEntity);
         var refreshToken = jwtService.generateRefreshToken(userEntity);
 
+        tokenService.saveToken(jwtToken, refreshToken, userEntity.getId());
+
         return AuthResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
@@ -54,6 +57,8 @@ public class AuthService {
 
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);
+
+        tokenService.saveToken(jwtToken, refreshToken, user.getId());
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
