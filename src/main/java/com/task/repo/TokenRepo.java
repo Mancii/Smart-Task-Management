@@ -15,4 +15,14 @@ public interface TokenRepo extends JpaRepository<JwtEntity, Long>{
 
 	JwtEntity findByUserId(Long userId);
 	 
+	@Modifying
+	@Transactional
+	@Query("update JwtEntity j set j.validId = 0, j.updatedAt = :currentDate where j.accessToken = :token")
+	Integer invalidateToken(@Param("token")String token, @Param("currentDate")Date currentDate);
+
+	@Modifying
+	@Transactional
+	@Query("update JwtEntity j set j.validId = 0, j.updatedAt = :currentDate where j.tokenId = :tokenId")
+	Integer invalidateTokenById(@Param("tokenId") Long tokenId, @Param("currentDate") Date currentDate);
+
 }

@@ -1,5 +1,6 @@
 package com.task.service;
 
+import com.task.dto.LogoutResponse;
 import com.task.entity.JwtEntity;
 import com.task.repo.TokenRepo;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,13 @@ public class TokenService {
         jwtEntity.setCreatedAt(new Date());
         jwtEntity.setUpdatedAt(new Date());
         tokenRepo.save(jwtEntity);
+    }
+
+    public LogoutResponse logout(String token) throws Exception {
+        Integer x = tokenRepo.invalidateToken(token, new Date());
+        if (x == null || x == 0)
+            throw new IllegalArgumentException("Error has occurred");
+        return new LogoutResponse("logout successfully");
     }
 
 }
