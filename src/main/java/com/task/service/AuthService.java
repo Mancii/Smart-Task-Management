@@ -31,6 +31,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : UserRole.USER)
+                .statusId(1L)
                 .build();
 
         User userEntity = mapper.map(userDto, User.class);

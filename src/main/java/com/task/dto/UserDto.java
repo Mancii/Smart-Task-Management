@@ -4,6 +4,8 @@ import com.task.entity.UserRole;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 @Builder
 public class UserDto {
@@ -11,4 +13,7 @@ public class UserDto {
     private String password;
     private String email;
     private UserRole role;
+    private Long statusId;
+    private String mobileNumber;
+    private Date passwordExpiryDate;
 }

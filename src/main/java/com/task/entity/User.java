@@ -9,6 +9,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -21,17 +22,28 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(name = "USER_NAME", nullable = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(name = "PASSWORD", nullable = false)
     private String password;
 
-    @Column(nullable = false)
+    @Column(name = "EMAIL", nullable = false, unique = true)
     private String email;
 
+    @Column(name = "STATUS_ID")
+    private Long statusId;
+
+    @Column(name = "MOBILE_NUMBER")
+    private String mobileNumber;
+
+    @Column(name = "USER_ROLE")
     @Enumerated(EnumType.STRING)
     private UserRole role;
+
+    @Column(name = "PASSWORD_EXPIRY_DATE")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date passwordExpiryDate;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
