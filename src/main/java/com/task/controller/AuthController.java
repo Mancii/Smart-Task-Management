@@ -41,6 +41,17 @@ public class AuthController {
         }
 
     }
+
+    @PostMapping("/kill")
+    public ResponseEntity<?> killSession(@RequestParam long id) throws Exception {
+
+        try {
+            return ResponseEntity.ok(tokenService.kill(id));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ErrorResponse("invalid Token", 498));
+        }
+
+    }
 }
 
 
