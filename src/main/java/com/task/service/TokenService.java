@@ -34,9 +34,19 @@ public class TokenService {
 
     public LogoutResponse logout(String token) throws Exception {
         Integer x = tokenRepo.invalidateToken(token, new Date());
+
         if (x == null || x == 0)
             throw new IllegalArgumentException("Error has occurred");
+
         return new LogoutResponse("logout successfully");
     }
 
+    public LogoutResponse kill(long tokenId) {
+        Integer x = tokenRepo.invalidateTokenById(tokenId, new Date());
+
+        if (x == null || x == 0)
+            throw new IllegalArgumentException("Error has occurred");
+
+        return new LogoutResponse("logout successfully");
+    }
 }
