@@ -3,6 +3,10 @@ package com.task.utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.task.config.ApplicationConfigBean;
+import com.task.constants.MainConstants;
+import com.task.entity.AppConfig;
+import com.task.entity.AppConfigParam;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -34,13 +38,19 @@ public class JwtTokenUtil implements Serializable {
 
     private static final Logger logger = LogManager.getLogger(JwtTokenUtil.class);
 
-    @Value("${jwt.secret}")
-    public String secretKey;
+    private String loadKey() {
+        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
+                .get(MainConstants.JWT_SECRET_KEY);
+
+        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
+
+        return configParams.get("JWT_SECRET_KEY").getValue();
+    }
 
     // for retrieving any information from token we will need the secret key
     public Claims getAllClaimsFromToken(String token) {
         // Load your secret key (make sure it's at least 256 bits for HS256)
-        byte[] keyBytes = Base64.getDecoder().decode(secretKey); // use plain .getBytes() if not base64
+        byte[] keyBytes = Base64.getDecoder().decode(loadKey()); // use plain .getBytes() if not base64
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
 
         return Jwts
@@ -50,16 +60,7 @@ public class JwtTokenUtil implements Serializable {
                 .parseClaimsJws(token)
                 .getBody();
     }
-//
-//    private String loadKey() {
-//        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
-//                .get(MainConstants.JWT_SECRET_KEY);
-//
-//        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
-//
-//        return configParams.get("jwt-key").getValue();
-//    }
-//
+
     public Map<String, Object> getTokenPayload(String accessToken) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
@@ -107,7 +108,7 @@ public class JwtTokenUtil implements Serializable {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + Time))
-                .signWith(SignatureAlgorithm.HS256, secretKey.getBytes())
+                .signWith(SignatureAlgorithm.HS256, loadKey().getBytes())
                 .compact();
     }
 ////

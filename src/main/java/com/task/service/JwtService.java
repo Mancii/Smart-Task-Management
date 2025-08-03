@@ -1,8 +1,9 @@
 package com.task.service;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.task.config.ApplicationConfigBean;
+import com.task.constants.MainConstants;
+import com.task.entity.AppConfig;
+import com.task.entity.AppConfigParam;
 import com.task.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -12,7 +13,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.io.IOException;
 import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,14 +22,20 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    @Value("${jwt.secret}")
-    private String secretKey;
-
     @Value("${jwt.access.token.validity}")
     private long jwtExpirationMs;
 
     @Value("${jwt.refresh.token.validity}")
     private long refreshExpirationMs;
+
+    private String loadKey() {
+        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
+                .get(MainConstants.JWT_SECRET_KEY);
+
+        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
+
+        return configParams.get("JWT_SECRET_KEY").getValue();
+    }
 
     public String extractUserEmail(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -40,7 +46,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
     private Claims extractAllClaims(String token) {
-        byte[] keyBytes = Base64.getDecoder().decode(secretKey);
+        byte[] keyBytes = Base64.getDecoder().decode(loadKey());
         SecretKey key = Keys.hmacShaKeyFor(keyBytes);
 
         return Jwts
@@ -68,7 +74,7 @@ public class JwtService {
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .claim("authorities", user.getAuthorities())
-                .signWith(SignatureAlgorithm.HS256, secretKey)
+                .signWith(SignatureAlgorithm.HS256, loadKey())
                 .compact();
     }
 
