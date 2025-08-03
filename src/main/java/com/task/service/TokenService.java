@@ -1,12 +1,16 @@
 package com.task.service;
 
+import com.task.dto.AuthResponse;
 import com.task.dto.LogoutResponse;
 import com.task.entity.JwtEntity;
 import com.task.repo.TokenRepo;
+import com.task.utils.JwtTokenUtil;
 import lombok.AllArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Service;
+
+import java.io.IOException;
 import java.util.*;
 
 @AllArgsConstructor
@@ -14,6 +18,7 @@ import java.util.*;
 public class TokenService {
 
     private final TokenRepo tokenRepo;
+    private final JwtTokenUtil jwtTokenUtil;
 
     private static final Logger logger = LogManager.getLogger(TokenService.class);
 
@@ -49,4 +54,34 @@ public class TokenService {
 
         return new LogoutResponse("logout successfully");
     }
+
+    public AuthResponse getUserNameFromTokenUsingRefreshToken(String refreshToken) {
+        JwtEntity jwtEntity = tokenRepo.findByRefreshToken(refreshToken);
+
+        if (jwtEntity.getValidId() != 1) {
+            logger.info("Invalid Token");
+//            throw new Exception("invalid Token");
+        }
+        Map<String, Object> claims;
+        try {
+            claims = jwtTokenUtil.getTokenPayload(jwtEntity.getAccessToken());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        String token = jwtTokenUtil.generateToken((String) claims.get("sub"), claims);
+        String refToken = jwtTokenUtil.generateRefreshToken(claims);
+
+        saveToken(token, refToken, jwtEntity);
+
+        return new AuthResponse(token, refToken);
+    }
+
+    private void saveToken(String token, String refreshToken, JwtEntity jwtEntity) {
+        jwtEntity.setAccessToken(token);
+        jwtEntity.setRefreshToken(refreshToken);
+        jwtEntity.setUpdatedAt(new Date());
+        tokenRepo.save(jwtEntity);
+    }
+
 }
