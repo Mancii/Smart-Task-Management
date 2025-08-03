@@ -11,8 +11,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -28,15 +26,11 @@ public class JwtTokenUtil implements Serializable {
 
     private static final long serialVersionUID = -2550185165626007488L;
 
-    // JWT_TOKEN_VALIDITY_IN_MS = 5 minute
     @Value("${jwt.access.token.validity}")
-    public long JWT_TOKEN_VALIDITY_IN_MS;
+    public long jwtTokenValidityInMs;
 
-    // REFRESH_JWT_TOKEN_VALIDITY_IN_MS = 30 minute
     @Value("${jwt.refresh.token.validity}")
-    public long REFRESH_JWT_TOKEN_VALIDITY_IN_MS;
-
-    private static final Logger logger = LogManager.getLogger(JwtTokenUtil.class);
+    public long refreshJwtTokenValidityInMs;
 
     private String loadKey() {
         AppConfig configDetail = ApplicationConfigBean.configDetailsMap
@@ -64,8 +58,6 @@ public class JwtTokenUtil implements Serializable {
     public Map<String, Object> getTokenPayload(String accessToken) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
 
-        logger.info("------------ Decode JWT ------------");
-
         String[] splitString = accessToken.split("\\.");
         if (splitString.length < 2) {
             throw new IllegalArgumentException("Invalid JWT token format");
@@ -82,16 +74,16 @@ public class JwtTokenUtil implements Serializable {
 
         return mapper.readValue(body, Map.class);
     }
-//
+
 //    // generate token for user
     public String generateToken(String userName, Map<String, Object> userClaims) {
         Map<String, Object> claims = userClaims;
-        return doGenerateToken(claims, userName, JWT_TOKEN_VALIDITY_IN_MS);
+        return doGenerateToken(claims, userName, jwtTokenValidityInMs);
     }
-//
+
     public String generateRefreshToken(Map<String, Object> userClaims) {
         Map<String, Object> claims = userClaims;
-        return doGenerateToken(claims, "", REFRESH_JWT_TOKEN_VALIDITY_IN_MS);
+        return doGenerateToken(claims, "", refreshJwtTokenValidityInMs);
     }
 //
 //    // while creating the token -
