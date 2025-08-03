@@ -14,6 +14,7 @@ import java.util.Date;
 public interface TokenRepo extends JpaRepository<JwtEntity, Long>{
 
 	JwtEntity findByUserId(Long userId);
+	JwtEntity findByRefreshToken(String refreshToken);
 	 
 	@Modifying
 	@Transactional

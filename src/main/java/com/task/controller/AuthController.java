@@ -30,6 +30,13 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    @PostMapping("/refreshToken")
+    public ResponseEntity<?> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
+        return ResponseEntity.ok(tokenService.
+                getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken())
+        );
+    }
+
     @PostMapping("/resetPassword")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordForm passwordForm)
             throws Exception {
