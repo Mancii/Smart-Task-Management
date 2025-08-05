@@ -1,26 +1,31 @@
 package com.task.utils;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.config.ApplicationConfigBean;
 import com.task.constants.MainConstants;
 import com.task.entity.AppConfig;
 import com.task.entity.AppConfigParam;
+import com.task.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 
+@Slf4j
 @Component
 public class JwtTokenUtil implements Serializable {
 
@@ -31,6 +36,10 @@ public class JwtTokenUtil implements Serializable {
 
     @Value("${jwt.refresh.token.validity}")
     public long refreshJwtTokenValidityInMs;
+
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
 
     private String loadKey() {
         AppConfig configDetail = ApplicationConfigBean.configDetailsMap
@@ -56,23 +65,26 @@ public class JwtTokenUtil implements Serializable {
     }
 
     public Map<String, Object> getTokenPayload(String accessToken) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new BusinessException("Access token must not be null or blank");
+        }
 
         String[] splitString = accessToken.split("\\.");
         if (splitString.length < 2) {
-            throw new IllegalArgumentException("Invalid JWT token format");
+            throw new BusinessException("Invalid JWT token format");
         }
 
         String base64EncodedBody = splitString[1];
 
-        // Decode the JWT body using Java's Base64 URL decoder
-        byte[] decodedBytes = Base64.getUrlDecoder().decode(base64EncodedBody);
-        String body = new String(decodedBytes);
+        try {
+            byte[] decodedBytes = Base64.getUrlDecoder().decode(base64EncodedBody);
+            String body = new String(decodedBytes, StandardCharsets.UTF_8);
+            return objectMapper.readValue(body, new TypeReference<>() {});
+        } catch (Exception e) {
+            log.error("Failed to parse token payload", e);
+            throw new BusinessException("Failed to parse token payload", e);
+        }
 
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        mapper.enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
-
-        return mapper.readValue(body, Map.class);
     }
 
 //    // generate token for user

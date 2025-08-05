@@ -9,11 +9,12 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Date;
+import java.util.Optional;
 
 @Repository
 public interface TokenRepo extends JpaRepository<JwtEntity, Long>{
 
-	JwtEntity findByUserId(Long userId);
+	Optional<JwtEntity> findByUserId(Long userId);
 	JwtEntity findByRefreshToken(String refreshToken);
 	 
 	@Modifying

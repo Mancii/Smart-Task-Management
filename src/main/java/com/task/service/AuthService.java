@@ -1,5 +1,6 @@
 package com.task.service;
 
+import com.task.constants.MainConstants;
 import com.task.dto.AuthResponse;
 import com.task.dto.AuthenticationRequest;
 import com.task.dto.UserDto;
@@ -31,7 +32,7 @@ public class AuthService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : UserRole.USER)
-                .statusId(1L)
+                .statusId(MainConstants.ACCOUNT_ACTIVE)
                 .build();
 
         User userEntity = mapper.map(userDto, User.class);
