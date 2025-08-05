@@ -15,7 +15,7 @@ import java.util.Optional;
 public interface TokenRepo extends JpaRepository<JwtEntity, Long>{
 
 	Optional<JwtEntity> findByUserId(Long userId);
-	JwtEntity findByRefreshToken(String refreshToken);
+	Optional<JwtEntity> findByRefreshToken(String refreshToken);
 	 
 	@Modifying
 	@Transactional

@@ -78,7 +78,8 @@ public class TokenService {
             throw new BusinessException("Refresh token must not be null or blank");
         }
 
-        JwtEntity jwtEntity = tokenRepo.findByRefreshToken(refreshToken);
+        JwtEntity jwtEntity = tokenRepo.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new BusinessException("Refresh token not found"));
 
         if (jwtEntity.getValidId() != 1)
             throw new BusinessException("invalid Token");
