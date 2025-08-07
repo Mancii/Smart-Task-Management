@@ -16,4 +16,5 @@ public class UserDto {
     private Long statusId;
     private String mobileNumber;
     private Date passwordExpiryDate;
+    private boolean enabled;
 }
