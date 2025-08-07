@@ -4,7 +4,6 @@ import com.task.entity.AppConfig;
 import com.task.entity.AppConfigParam;
 import com.task.repo.AppConfigRepository;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 
 import jakarta.annotation.PostConstruct;

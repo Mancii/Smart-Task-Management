@@ -3,6 +3,9 @@ package com.task.utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.config.ApplicationConfigBean;
 import com.task.constants.MainConstants;
@@ -12,15 +15,12 @@ import com.task.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
@@ -41,24 +41,21 @@ public class JwtTokenUtil implements Serializable {
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
 
-    private String loadKey() {
+    private SecretKey loadKey() {
         AppConfig configDetail = ApplicationConfigBean.configDetailsMap
                 .get(MainConstants.JWT_SECRET_KEY);
 
         Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
 
-        return configParams.get("JWT_SECRET_KEY").getValue();
+        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
     }
 
     // for retrieving any information from token we will need the secret key
     public Claims getAllClaimsFromToken(String token) {
-        // Load your secret key (make sure it's at least 256 bits for HS256)
-        byte[] keyBytes = Base64.getDecoder().decode(loadKey()); // use plain .getBytes() if not base64
-        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
-
-        return Jwts
-                .parserBuilder()
-                .setSigningKey(key)
+        return Jwts.parserBuilder()
+                .setSigningKey(loadKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -112,7 +109,7 @@ public class JwtTokenUtil implements Serializable {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + Time))
-                .signWith(SignatureAlgorithm.HS256, loadKey().getBytes())
+                .signWith(loadKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 ////
