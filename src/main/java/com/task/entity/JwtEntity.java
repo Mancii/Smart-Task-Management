@@ -2,9 +2,11 @@ package com.task.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.Instant;
 
 @Entity
 @Table(name = "JWT_TOKENS")
@@ -30,13 +32,15 @@ public class JwtEntity implements Serializable {
 	
 	@Column(name = "USER_ID")
 	private Long userId;
-	
-	@Column(name = "CREATED_AT")
+
 	@Temporal(TemporalType.TIMESTAMP)
-	private Date createdAt;
-	
-	@Column(name = "UPDATED_AT")
+	@CreationTimestamp
+	@Column(name = "CREATED_AT", nullable = false, updatable = false)
+	private Instant createdAt;
+
 	@Temporal(TemporalType.TIMESTAMP)
-	private Date updatedAt;
+	@UpdateTimestamp
+	@Column(name = "UPDATED_AT", nullable = false)
+	private Instant updatedAt;
 
 }

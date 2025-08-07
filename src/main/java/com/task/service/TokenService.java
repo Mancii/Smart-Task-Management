@@ -1,43 +1,61 @@
 package com.task.service;
 
+import com.task.constants.MainConstants;
 import com.task.dto.AuthResponse;
 import com.task.dto.LogoutResponse;
 import com.task.entity.JwtEntity;
+import com.task.exception.BusinessException;
 import com.task.repo.TokenRepo;
 import com.task.utils.JwtTokenUtil;
 import lombok.AllArgsConstructor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.*;
 
 @AllArgsConstructor
 @Service
+@Slf4j
 public class TokenService {
 
     private final TokenRepo tokenRepo;
     private final JwtTokenUtil jwtTokenUtil;
 
-    private static final Logger logger = LogManager.getLogger(TokenService.class);
-
     public void saveToken(String token, String refreshToken, Long userId) {
 
-        JwtEntity jwtEntity = tokenRepo.findByUserId(userId);
+        log.debug("Saving tokens for user ID: {}", userId);
 
-        if (jwtEntity == null)
-            jwtEntity = new JwtEntity();
-        jwtEntity.setAccessToken(token);
-        jwtEntity.setRefreshToken(refreshToken);
-        jwtEntity.setValidId((long) 1);
-        jwtEntity.setUserId(userId);
-        jwtEntity.setCreatedAt(new Date());
-        jwtEntity.setUpdatedAt(new Date());
-        tokenRepo.save(jwtEntity);
+        JwtEntity jwtEntity = tokenRepo.findByUserId(userId).orElseGet(() -> createNewJwtEntity(userId));
+
+        updateTokenEntity(jwtEntity, token, refreshToken);
+
+        JwtEntity savedEntity = tokenRepo.save(jwtEntity);
+
+        log.debug("Successfully saved tokens for user ID: {}", savedEntity.getUserId());
     }
 
-    public LogoutResponse logout(String token) throws Exception {
+    private JwtEntity createNewJwtEntity(Long userId) {
+        log.debug("Creating new JWT entity for user ID: {}", userId);
+        JwtEntity entity = new JwtEntity();
+        entity.setUserId(userId);
+        entity.setValidId(MainConstants.ACCOUNT_ACTIVE);
+        entity.setCreatedAt(Instant.now());
+        return entity;
+    }
+
+    private void updateTokenEntity(JwtEntity entity, String token, String refreshToken) {
+        entity.setAccessToken(token);
+        entity.setRefreshToken(refreshToken);
+        entity.setUpdatedAt(Instant.now());
+
+        if (entity.getCreatedAt() == null) {
+            entity.setCreatedAt(Instant.now());
+        }
+    }
+
+    public LogoutResponse logout(String token) {
         Integer x = tokenRepo.invalidateToken(token, new Date());
 
         if (x == null || x == 0)
@@ -56,17 +74,22 @@ public class TokenService {
     }
 
     public AuthResponse getUserNameFromTokenUsingRefreshToken(String refreshToken) {
-        JwtEntity jwtEntity = tokenRepo.findByRefreshToken(refreshToken);
-
-        if (jwtEntity.getValidId() != 1) {
-            logger.info("Invalid Token");
-//            throw new Exception("invalid Token");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BusinessException("Refresh token must not be null or blank");
         }
+
+        JwtEntity jwtEntity = tokenRepo.findByRefreshToken(refreshToken)
+                .orElseThrow(() -> new BusinessException("Refresh token not found"));
+
+        if (jwtEntity.getValidId() != 1)
+            throw new BusinessException("invalid Token");
+
+
         Map<String, Object> claims;
         try {
             claims = jwtTokenUtil.getTokenPayload(jwtEntity.getAccessToken());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new BusinessException(e);
         }
 
         String token = jwtTokenUtil.generateToken((String) claims.get("sub"), claims);
@@ -80,7 +103,7 @@ public class TokenService {
     private void saveToken(String token, String refreshToken, JwtEntity jwtEntity) {
         jwtEntity.setAccessToken(token);
         jwtEntity.setRefreshToken(refreshToken);
-        jwtEntity.setUpdatedAt(new Date());
+        jwtEntity.setUpdatedAt(Instant.now());
         tokenRepo.save(jwtEntity);
     }
 
