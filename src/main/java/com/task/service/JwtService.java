@@ -7,13 +7,11 @@ import com.task.entity.AppConfigParam;
 import com.task.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.SecretKey;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,13 +26,13 @@ public class JwtService {
     @Value("${jwt.refresh.token.validity}")
     private long refreshExpirationMs;
 
-    private String loadKey() {
+    private SecretKey getSigningKey() {
         AppConfig configDetail = ApplicationConfigBean.configDetailsMap
                 .get(MainConstants.JWT_SECRET_KEY);
 
         Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
-
-        return configParams.get("JWT_SECRET_KEY").getValue();
+        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+        return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
     public String extractUserEmail(String token) {
@@ -46,20 +44,16 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
     private Claims extractAllClaims(String token) {
-        byte[] keyBytes = Base64.getDecoder().decode(loadKey());
-        SecretKey key = Keys.hmacShaKeyFor(keyBytes);
-
         return Jwts
                 .parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
     public String generateToken(User user) {
-        Map<String, Object> claims = new HashMap<>();
-        return buildToken(claims, user, jwtExpirationMs);
+        return buildToken(new HashMap<>(), user, jwtExpirationMs);
     }
 
     public String generateRefreshToken(User user) {
@@ -74,7 +68,7 @@ public class JwtService {
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .claim("authorities", user.getAuthorities())
-                .signWith(SignatureAlgorithm.HS256, loadKey())
+                .signWith(getSigningKey())
                 .compact();
     }
 
