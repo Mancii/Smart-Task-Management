@@ -27,8 +27,8 @@ public class Utils {
 		return obj != null && obj.length() != 0;
 	}
 
-	public static boolean isNotEmpty(List obj) {
-		return obj != null && obj.size() != 0;
+	public static <T> boolean isNotEmpty(List<T> obj) {
+		return obj != null && !obj.isEmpty();
 	}
 
 	public static boolean isNotEmpty(Object obj) {
