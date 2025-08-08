@@ -97,7 +97,10 @@ public class TokenService {
 
         saveToken(token, refToken, jwtEntity);
 
-        return new AuthResponse(token, refToken);
+        return AuthResponse.builder()
+                .accessToken(token)
+                .refreshToken(refToken)
+                .build();
     }
 
     private void saveToken(String token, String refreshToken, JwtEntity jwtEntity) {

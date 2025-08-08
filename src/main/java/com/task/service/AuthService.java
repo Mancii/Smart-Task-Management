@@ -6,14 +6,20 @@ import com.task.dto.AuthenticationRequest;
 import com.task.dto.UserDto;
 import com.task.entity.User;
 import com.task.entity.UserRole;
+import com.task.entity.VerificationToken;
+import com.task.exception.BusinessException;
 import com.task.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -21,7 +27,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final ModelMapper mapper;
     private final TokenService tokenService;
+    private final EmailService emailService;
+    private final VerificationTokenService verificationTokenService;
+    
+    @Value("${app.base-url}")
+    private String appBaseUrl;
 
+    @Transactional
     public AuthResponse register(AuthenticationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email already in use");
@@ -33,19 +45,33 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(request.getRole() != null ? request.getRole() : UserRole.USER)
                 .statusId(MainConstants.ACCOUNT_ACTIVE)
+                .enabled(false) // User is disabled until email is verified
                 .build();
 
         User userEntity = mapper.map(userDto, User.class);
         userRepository.save(userEntity);
 
+        // Create and save verification token
+        VerificationToken verificationToken = verificationTokenService.createVerificationToken(userEntity);
+        
+        // Send verification email
+        try {
+            emailService.sendVerificationEmail(userEntity, verificationToken.getToken());
+        } catch (Exception e) {
+            log.error("Failed to send verification email", e);
+            // In production, you might want to handle this differently
+            throw new BusinessException("Failed to send verification email. Please try again later.");
+        }
+
+        // Generate tokens but user won't be able to use them until email is verified
         var jwtToken = jwtService.generateToken(userEntity);
         var refreshToken = jwtService.generateRefreshToken(userEntity);
-
         tokenService.saveToken(jwtToken, refreshToken, userEntity.getId());
 
         return AuthResponse.builder()
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
+                .message("Registration successful. Please check your email to verify your account.")
                 .build();
     }
 
@@ -55,6 +81,10 @@ public class AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("Invalid email or password");
+        }
+
+        if (!user.isEnabled()) {
+            throw new IllegalStateException("Account not verified. Please check your email and verify your account.");
         }
 
         var jwtToken = jwtService.generateToken(user);
