@@ -34,6 +34,31 @@ public class VerificationTokenService {
     }
 
     @Transactional
+    public void verifyEmailToken(String token) {
+        // Find the verification token
+        VerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new InvalidTokenException("Invalid verification link."));
+
+        // Check if token is expired
+        if (verificationToken.isExpired()) {
+            tokenRepository.delete(verificationToken);
+            throw new InvalidTokenException("Verification link has expired. Please register again.");
+        }
+
+        // Check if token is already used
+        if (verificationToken.isUsed()) {
+            throw new InvalidTokenException("This verification link has already been used.");
+        }
+
+        // Get and enable the user
+        User user = verificationToken.getUser();
+        user.setEnabled(true);
+        userRepository.save(user);
+
+        // Mark token as used and delete it
+        verificationToken.setUsed(true);
+        tokenRepository.delete(verificationToken);
+    }
 
     @Transactional
     public void deleteToken(VerificationToken token) {

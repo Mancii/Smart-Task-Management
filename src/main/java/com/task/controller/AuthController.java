@@ -1,9 +1,11 @@
 package com.task.controller;
 
 import com.task.dto.*;
+import com.task.exception.InvalidTokenException;
 import com.task.service.AuthService;
 import com.task.service.TokenService;
 import com.task.service.JwtUserDetailsService;
+import com.task.service.VerificationTokenService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +21,7 @@ public class AuthController {
     private final AuthService authService;
     private final TokenService tokenService;
     private final JwtUserDetailsService jwtUserDetailsService;
+    private final VerificationTokenService verificationTokenService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> create(@RequestBody @Valid AuthenticationRequest request) {
@@ -61,13 +64,24 @@ public class AuthController {
 
     @PostMapping("/kill")
     public ResponseEntity<?> killSession(@RequestParam long id) throws Exception {
-
         try {
             return ResponseEntity.ok(tokenService.kill(id));
         } catch (Exception e) {
             return ResponseEntity.ok(new ErrorResponse("invalid Token", 498));
         }
+    }
 
+    @GetMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
+        try {
+            verificationTokenService.verifyEmailToken(token);
+            return ResponseEntity.ok("Email verified successfully. You can now log in.");
+        } catch (InvalidTokenException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("An error occurred while verifying your email.");
+        }
     }
 }
 
