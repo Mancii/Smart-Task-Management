@@ -1,5 +1,6 @@
 package com.task.service;
 
+import com.task.constants.MainConstants;
 import com.task.entity.User;
 import com.task.entity.VerificationToken;
 import com.task.exception.InvalidTokenException;
@@ -54,6 +55,7 @@ public class VerificationTokenService {
         tokenRepository.save(verificationToken);
 
         User user = verificationToken.getUser();
+        user.setStatusId(MainConstants.ACCOUNT_ACTIVE);
         user.setEnabled(true);
         userRepository.save(user);
 

@@ -48,8 +48,8 @@ public class AuthService {
                 .username(request.getUserName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(UserRole.USER) // Always set default role
-                .statusId(MainConstants.ACCOUNT_ACTIVE)
+                .role(request.getRole())
+                .statusId(MainConstants.ACCOUNT_LOCKED) // User is locked until email is verified
                 .enabled(false) // User is disabled until email is verified
                 .build();
 
