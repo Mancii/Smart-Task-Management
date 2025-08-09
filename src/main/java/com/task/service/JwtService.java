@@ -1,6 +1,5 @@
 package com.task.service;
 
-import com.task.config.VaultConfig;
 import com.task.entity.User;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -20,11 +19,8 @@ public class JwtService {
     private long jwtExpirationMs;
     @Value("${jwt.refresh.token.validity}")
     private long refreshExpirationMs;
-    private final VaultConfig vaultConfig;
-
-    public JwtService(VaultConfig vaultConfig) {
-        this.vaultConfig = vaultConfig;
-    }
+    @Value("${jwt.secret}")
+    private String jwtKey;
 
 //    private SecretKey getSigningKey() {
 //        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
@@ -36,8 +32,7 @@ public class JwtService {
 //    }
 
     private SecretKey getSigningKey() {
-        String secret = vaultConfig.getSecurity().getJwtKey();
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(jwtKey.getBytes());
     }
 
     public String extractUserEmail(String token) {

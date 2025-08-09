@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.task.config.VaultConfig;
 import com.task.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -33,11 +32,8 @@ public class JwtTokenUtil implements Serializable {
     public long jwtTokenValidityInMs;
     @Value("${jwt.refresh.token.validity}")
     public long refreshJwtTokenValidityInMs;
-    private final VaultConfig vaultConfig;
-
-    public JwtTokenUtil(VaultConfig vaultConfig) {
-        this.vaultConfig = vaultConfig;
-    }
+    @Value("${jwt.secret}")
+    private String jwtKey;
 
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
@@ -55,8 +51,7 @@ public class JwtTokenUtil implements Serializable {
 //    }
 
     private SecretKey loadKey() {
-        String secret = vaultConfig.getSecurity().getJwtKey();
-        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+        byte[] keyBytes = jwtKey.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
     }
 

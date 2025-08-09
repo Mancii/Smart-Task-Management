@@ -26,11 +26,12 @@ public class EmailService implements EmailServiceInterface {
     private final String fromEmail;
     private final String appBaseUrl;
 
-    public EmailService(VaultConfig vaultConfig,
+    public EmailService(@Value("${app.email.sender}") String sender,
+                        @Value("${app.email.apiKey}") String apiKey,
                        @Value("${app.base-url}") String appBaseUrl,
                        TemplateService templateService) {
-        this.sendGrid = new SendGrid(vaultConfig.getEmail().getApiKey());
-        this.fromEmail = vaultConfig.getEmail().getSender();
+        this.sendGrid = new SendGrid(apiKey);
+        this.fromEmail = sender;
         this.appBaseUrl = appBaseUrl;
         this.templateService = templateService;
     }

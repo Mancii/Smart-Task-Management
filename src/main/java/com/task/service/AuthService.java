@@ -36,7 +36,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(AuthenticationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already in use");
+            throw new IllegalArgumentException("Email already exist");
         }
 
         var userDto = UserDto.builder()

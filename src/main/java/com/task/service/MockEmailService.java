@@ -1,6 +1,5 @@
 package com.task.service;
 
-import com.task.config.VaultConfig;
 import com.task.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,10 +17,10 @@ public class MockEmailService implements EmailServiceInterface {
     private final String fromEmail;
     private final String appBaseUrl;
 
-    public MockEmailService(VaultConfig vaultConfig,
-                            @Value("${app.base-url}") String appBaseUrl,
+    public MockEmailService(@Value("${app.base-url}") String appBaseUrl,
+                            @Value("${app.email.sender}") String sender,
                             TemplateService templateService) {
-        this.fromEmail = vaultConfig.getEmail().getSender();
+        this.fromEmail = sender;
         this.appBaseUrl = appBaseUrl;
         this.templateService = templateService;
     }
