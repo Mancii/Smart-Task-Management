@@ -34,16 +34,21 @@ public class AuthService {
     private String appBaseUrl;
 
     @Transactional
-    public AuthResponse register(AuthenticationRequest request) {
+    public void register(AuthenticationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exist");
+            throw new BusinessException("Email already exists");
+        }
+
+        // Validate password strength
+        if (request.getPassword().length() < 8) {
+            throw new BusinessException("Password must be at least 8 characters long");
         }
 
         var userDto = UserDto.builder()
                 .username(request.getUserName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole() != null ? request.getRole() : UserRole.USER)
+                .role(UserRole.USER) // Always set default role
                 .statusId(MainConstants.ACCOUNT_ACTIVE)
                 .enabled(false) // User is disabled until email is verified
                 .build();
@@ -59,20 +64,8 @@ public class AuthService {
             emailService.sendVerificationEmail(userEntity, verificationToken.getToken());
         } catch (Exception e) {
             log.error("Failed to send verification email", e);
-            // In production, you might want to handle this differently
             throw new BusinessException("Failed to send verification email. Please try again later.");
         }
-
-        // Generate tokens but user won't be able to use them until email is verified
-        var jwtToken = jwtService.generateToken(userEntity);
-        var refreshToken = jwtService.generateRefreshToken(userEntity);
-        tokenService.saveToken(jwtToken, refreshToken, userEntity.getId());
-
-        return AuthResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .message("Registration successful. Please check your email to verify your account.")
-                .build();
     }
 
     public AuthResponse login(AuthenticationRequest request) {
