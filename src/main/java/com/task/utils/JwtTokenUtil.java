@@ -3,15 +3,8 @@ package com.task.utils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import javax.crypto.spec.SecretKeySpec;
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.task.config.ApplicationConfigBean;
 import com.task.config.VaultConfig;
-import com.task.constants.MainConstants;
-import com.task.entity.AppConfig;
-import com.task.entity.AppConfigParam;
 import com.task.exception.BusinessException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -19,6 +12,10 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -58,7 +55,7 @@ public class JwtTokenUtil implements Serializable {
 //    }
 
     private SecretKey loadKey() {
-        String secret = vaultConfig.getJwtKey();
+        String secret = vaultConfig.getSecurity().getJwtKey();
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
     }

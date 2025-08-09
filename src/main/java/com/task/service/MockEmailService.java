@@ -21,7 +21,7 @@ public class MockEmailService implements EmailServiceInterface {
     public MockEmailService(VaultConfig vaultConfig,
                             @Value("${app.base-url}") String appBaseUrl,
                             TemplateService templateService) {
-        this.fromEmail = vaultConfig.getSender();
+        this.fromEmail = vaultConfig.getEmail().getSender();
         this.appBaseUrl = appBaseUrl;
         this.templateService = templateService;
     }

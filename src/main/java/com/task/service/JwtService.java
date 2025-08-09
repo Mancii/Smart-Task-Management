@@ -1,20 +1,13 @@
 package com.task.service;
 
-import com.task.config.ApplicationConfigBean;
 import com.task.config.VaultConfig;
-import com.task.constants.MainConstants;
-import com.task.entity.AppConfig;
-import com.task.entity.AppConfigParam;
 import com.task.entity.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import javax.crypto.SecretKey;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +36,7 @@ public class JwtService {
 //    }
 
     private SecretKey getSigningKey() {
-        String secret = vaultConfig.getJwtKey();
+        String secret = vaultConfig.getSecurity().getJwtKey();
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
