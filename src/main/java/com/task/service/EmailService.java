@@ -1,67 +1,87 @@
 package com.task.service;
 
+import com.sendgrid.*;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import com.task.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+import java.time.Year;
+import java.util.Map;
 
 @Service
+@Slf4j
 @ConditionalOnProperty(name = "app.email.mock", havingValue = "false", matchIfMissing = false)
 public class EmailService {
+    private final SendGrid sendGrid;
+    private final TemplateService templateService;
 
-    private final JavaMailSender mailSender;
-    private final String appBaseUrl;
-    private final String fromEmail;
+    @Value("${app.email.sender}")
+    private String fromEmail;
 
-    public EmailService(JavaMailSender mailSender,
-                        @Value("${app.base-url}") String appBaseUrl,
-                        @Value("${app.email.sender}") String fromEmail) {
-        this.mailSender = mailSender;
-        this.appBaseUrl = appBaseUrl;
-        this.fromEmail = fromEmail;
+    @Value("${app.base-url}")
+    private String appBaseUrl;
+
+    public EmailService(@Value("${app.email.sendgrid.api-key}") String apiKey,
+                TemplateService templateService) {
+            this.sendGrid = new SendGrid(apiKey);
+        this.templateService = templateService;
     }
 
-    public void sendVerificationEmail(User user, String token) {
-        String subject = "Email Verification";
-        String verificationLink = buildVerificationLink(token);
+    public void sendVerificationEmail(User user, String token) throws IOException {
+        String verificationLink = String.format("%s/api/auth/verify-email?token=%s",
+                appBaseUrl, token);
+        String subject = "Verify Your Email Address";
 
-        String message = String.format(
-            "Dear %s,%n%n" +
-            "Thank you for registering. Please click the link below to verify your email address:%n%n" +
-            "%s%n%n" +
-            "This link will expire in 24 hours.%n%n" +
-            "Best regards,%nThe Task Management Team",
-            user.getUsername(),
-            verificationLink
+        // Prepare template variables
+        Map<String, Object> variables = Map.of(
+                "username", user.getUsername(),
+                "verificationLink", verificationLink,
+                "currentYear", Year.now().getValue()
         );
 
-        sendEmail(user.getEmail(), subject, message);
+        // Process template
+        String htmlContent = templateService.processTemplate("verification-email.html", variables);
+
+        Email from = new Email(fromEmail, "Task Management");
+        Email to = new Email(user.getEmail(), user.getUsername());
+        Content content = new Content("text/html", htmlContent);
+
+        Mail mail = new Mail(from, subject, to, content);
+        sendEmail(mail);
     }
 
-    private String buildVerificationLink(String token) {
-        return UriComponentsBuilder.newInstance()
-                .scheme("https")
-                .host(appBaseUrl.replace("https://", "").replace("http://", ""))
-                .path("/api/auth/verify-email")
-                .queryParam("token", token)
-                .toUriString();
+    private void sendEmail(Mail mail) throws IOException {
+        Request request = new Request();
+        try {
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+
+            Response response = sendGrid.api(request);
+
+            if (response.getStatusCode() >= 400) {
+                log.error("Failed to send email. Status: {}, Body: {}",
+                        response.getStatusCode(), response.getBody());
+                throw new IOException("Failed to send email: " + response.getBody());
+            }
+
+            log.info("Email sent to {}",
+                    mail.personalization.getFirst().getTos().getFirst().getEmail());
+
+        } catch (IOException ex) {
+            log.error("Error sending email", ex);
+            throw ex;
+        }
     }
 
     public void sendPasswordResetEmail(User user, String resetUrl, String token) {
         // Implementation for password reset email (can be implemented later)
     }
 
-    private void sendEmail(String to, String subject, String text) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(fromEmail);
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(text);
-        
-        // In production, you might want to use async email sending
-        new Thread(() -> mailSender.send(message)).start();
-    }
 }
