@@ -45,4 +45,21 @@ public class RateLimitService {
             cache.evict("ip:" + key);
         }
     }
+
+    public int getIpAttempts(String ip) {
+        Cache cache = cacheManager.getCache(RateLimitConfig.REGISTRATION_ATTEMPTS_CACHE);
+        if (cache == null) {
+            return 0;
+        }
+
+        String cacheKey = "ip:" + ip;
+        Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
+
+        if (valueWrapper != null && valueWrapper.get() != null) {
+            AtomicInteger attempts = (AtomicInteger) valueWrapper.get();
+            assert attempts != null;
+            return attempts.get() == 0 ? 0 : attempts.get();
+        }
+        return 0;
+    }
 }
