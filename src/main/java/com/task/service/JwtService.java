@@ -1,6 +1,7 @@
 package com.task.service;
 
 import com.task.config.ApplicationConfigBean;
+import com.task.config.VaultConfig;
 import com.task.constants.MainConstants;
 import com.task.entity.AppConfig;
 import com.task.entity.AppConfigParam;
@@ -9,6 +10,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -22,16 +25,25 @@ public class JwtService {
 
     @Value("${jwt.access.token.validity}")
     private long jwtExpirationMs;
-
     @Value("${jwt.refresh.token.validity}")
     private long refreshExpirationMs;
+    private final VaultConfig vaultConfig;
+
+    public JwtService(VaultConfig vaultConfig) {
+        this.vaultConfig = vaultConfig;
+    }
+
+//    private SecretKey getSigningKey() {
+//        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
+//                .get(MainConstants.JWT_SECRET_KEY);
+//
+//        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
+//        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+//        return Keys.hmacShaKeyFor(secret.getBytes());
+//    }
 
     private SecretKey getSigningKey() {
-        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
-                .get(MainConstants.JWT_SECRET_KEY);
-
-        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
-        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+        String secret = vaultConfig.getJwtKey();
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 

@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.task.config.ApplicationConfigBean;
+import com.task.config.VaultConfig;
 import com.task.constants.MainConstants;
 import com.task.entity.AppConfig;
 import com.task.entity.AppConfigParam;
@@ -33,21 +34,31 @@ public class JwtTokenUtil implements Serializable {
 
     @Value("${jwt.access.token.validity}")
     public long jwtTokenValidityInMs;
-
     @Value("${jwt.refresh.token.validity}")
     public long refreshJwtTokenValidityInMs;
+    private final VaultConfig vaultConfig;
+
+    public JwtTokenUtil(VaultConfig vaultConfig) {
+        this.vaultConfig = vaultConfig;
+    }
 
     private static final ObjectMapper objectMapper = new ObjectMapper()
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT);
 
+//    private SecretKey loadKey() {
+//        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
+//                .get(MainConstants.JWT_SECRET_KEY);
+//
+//        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
+//
+//        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+//        byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
+//        return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
+//    }
+
     private SecretKey loadKey() {
-        AppConfig configDetail = ApplicationConfigBean.configDetailsMap
-                .get(MainConstants.JWT_SECRET_KEY);
-
-        Map<String, AppConfigParam> configParams = configDetail.getParamsMap();
-
-        String secret = configParams.get("JWT_SECRET_KEY").getValue();
+        String secret = vaultConfig.getJwtKey();
         byte[] keyBytes = secret.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
     }

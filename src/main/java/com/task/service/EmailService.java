@@ -4,10 +4,12 @@ import com.sendgrid.*;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
+import com.task.config.VaultConfig;
 import com.task.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -16,20 +18,20 @@ import java.util.Map;
 
 @Service
 @Slf4j
+@EnableConfigurationProperties(VaultConfig.class)
 @ConditionalOnProperty(name = "app.email.mock", havingValue = "false", matchIfMissing = false)
-public class EmailService {
+public class EmailService implements EmailServiceInterface {
     private final SendGrid sendGrid;
     private final TemplateService templateService;
+    private final String fromEmail;
+    private final String appBaseUrl;
 
-    @Value("${app.email.sender}")
-    private String fromEmail;
-
-    @Value("${app.base-url}")
-    private String appBaseUrl;
-
-    public EmailService(@Value("${app.email.sendgrid.api-key}") String apiKey,
-                TemplateService templateService) {
-            this.sendGrid = new SendGrid(apiKey);
+    public EmailService(VaultConfig vaultConfig,
+                       @Value("${app.base-url}") String appBaseUrl,
+                       TemplateService templateService) {
+        this.sendGrid = new SendGrid(vaultConfig.getApiKey());
+        this.fromEmail = vaultConfig.getSender();
+        this.appBaseUrl = appBaseUrl;
         this.templateService = templateService;
     }
 
