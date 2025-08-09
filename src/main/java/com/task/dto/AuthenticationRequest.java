@@ -1,10 +1,7 @@
 package com.task.dto;
 
 import com.task.entity.UserRole;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,6 +32,10 @@ public class AuthenticationRequest {
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
 
-    // Role is not required and will be set to USER by default in the service
+    @NotBlank(message = "Phone number is required")
+    @Pattern(regexp = "^(010|011|012|015)\\d{8}$", message = "Invalid phone number format. Use international format")
+    private String mobileNumber;
+
+    @NotNull
     private UserRole role;
 }
