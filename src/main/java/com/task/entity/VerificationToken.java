@@ -32,6 +32,12 @@ public class VerificationToken {
     @Column(nullable = false)
     private boolean used = false;
 
+    @Column
+    private LocalDateTime usedAt;
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
     public VerificationToken(String token, User user) {
         this.token = token;
         this.user = user;
