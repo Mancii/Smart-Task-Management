@@ -6,9 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
@@ -39,16 +40,20 @@ public class RateLimitService {
         }
     }
 
-    public void resetRateLimit(String key) {
+    public void resetRateLimit(String ip) {
         Cache cache = cacheManager.getCache(RateLimitConfig.REGISTRATION_ATTEMPTS_CACHE);
         if (cache != null) {
-            cache.evict("ip:" + key);
+            String cacheKey = "ip:" + ip;
+            cache.evict(cacheKey);
+            log.info("Rate limit reset for IP: {} by admin: {}", 
+                ip, getCurrentAdminUsername());
         }
     }
 
     public int getIpAttempts(String ip) {
         Cache cache = cacheManager.getCache(RateLimitConfig.REGISTRATION_ATTEMPTS_CACHE);
         if (cache == null) {
+            log.warn("Cache not available when checking attempts for IP: {}", ip);
             return 0;
         }
 
@@ -57,9 +62,28 @@ public class RateLimitService {
 
         if (valueWrapper != null && valueWrapper.get() != null) {
             AtomicInteger attempts = (AtomicInteger) valueWrapper.get();
-            assert attempts != null;
-            return attempts.get() == 0 ? 0 : attempts.get();
+            int attemptCount = attempts.get();
+            log.debug("Current attempts for IP {}: {}", ip, attemptCount);
+            return attemptCount;
         }
         return 0;
+    }
+    
+    public boolean isIpBlocked(String ip) {
+        return getIpAttempts(ip) > RateLimitConfig.MAX_ATTEMPTS;
+    }
+    
+    private String getCurrentAdminUsername() {
+        try {
+            Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            if (principal instanceof UserDetails) {
+                return ((UserDetails) principal).getUsername();
+            } else if (principal != null) {
+                return principal.toString();
+            }
+        } catch (Exception e) {
+            log.warn("Could not get admin username for audit log", e);
+        }
+        return "system";
     }
 }
