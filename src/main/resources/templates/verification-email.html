@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Task Management - Verify Your Email</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333; margin: 0; padding: 20px; background-color: #f4f4f4;">
+<div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <div style="background-color: #2563eb; padding: 15px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0;">Smart Task Management</h1>
+    </div>
+
+    <h2>Hello ${username},</h2>
+    <p>Thank you for registering. Please verify your email address by clicking the button below:</p>
+
+    <div style="text-align: center; margin: 25px 0;">
+        <a href="${verificationLink}"
+           style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Verify Email Address
+        </a>
+    </div>
+
+    <p>Or copy and paste this link into your browser:</p>
+    <p><a href="${verificationLink}" style="color: #2563eb; word-break: break-all;">${verificationLink}</a></p>
+
+    <p>This verification link will expire in 24 hours.</p>
+
+    <p>If you didn't create an account with us, please ignore this email.</p>
+
+    <p>Best regards,<br>The Task Management Team</p>
+
+    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eeeeee; font-size: 12px; color: #666666;">
+        &copy; ${currentYear} Smart Task Management. All rights reserved.<br>
+        <small>This is an automated message, please do not reply.</small>
+    </div>
+</div>
+</body>
+</html>
