@@ -2,10 +2,8 @@ package com.task.controller;
 
 import com.task.dto.*;
 import com.task.exception.InvalidTokenException;
-import com.task.service.AuthService;
-import com.task.service.TokenService;
-import com.task.service.JwtUserDetailsService;
-import com.task.service.VerificationTokenService;
+import com.task.service.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,9 +23,15 @@ public class AuthController {
     private final TokenService tokenService;
     private final JwtUserDetailsService jwtUserDetailsService;
     private final VerificationTokenService verificationTokenService;
+    private final RateLimitService rateLimitService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(@RequestBody @Valid AuthenticationRequest request) {
+    public ResponseEntity<ApiResponse> register(
+            @RequestBody @Valid AuthenticationRequest request, HttpServletRequest httpRequest) {
+
+        String clientIp = getClientIp(httpRequest);
+        rateLimitService.checkRateLimit(clientIp);
+
         authService.register(request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -108,6 +112,20 @@ public class AuthController {
                     null
                 ));
         }
+    }
+
+    private String getClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        return ip;
     }
 }
 
