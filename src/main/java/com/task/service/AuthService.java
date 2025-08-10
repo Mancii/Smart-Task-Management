@@ -106,20 +106,31 @@ public class AuthService {
             throw new BusinessException(message);
         }
 
+        // Update last login time
+        user.updateLastLoginTime();
+
         // Reset failed attempts on successful login
         if (user.getFailedLoginAttempts() > 0) {
             user.resetFailedAttempts();
-            user = userRepository.save(user);
         }
 
         if (!user.isEnabled()) {
             throw new BusinessException("Account not verified. Please check your email and verify your account");
+        }
+
+        // Check if password has expired (only if user has logged in before and it's been more than 3 months)
+        if (user.getLastLoginTime() != null &&
+                user.getLastLoginTime().isBefore(LocalDateTime.now().minusMonths(3)) &&
+                DateUtil.isDateBeforeNow(user.getPasswordExpiryDate())) {
+            throw new BusinessException("Your password has expired. Please reset your password");
         }
         
         // Check if password has expired
         if (DateUtil.isDateBeforeNow(user.getPasswordExpiryDate())) {
             throw new BusinessException("Your password has expired. Please reset your password");
         }
+
+        user = userRepository.save(user);
 
         var jwtToken = jwtService.generateToken(user);
         var refreshToken = jwtService.generateRefreshToken(user);

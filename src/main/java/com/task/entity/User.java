@@ -42,6 +42,9 @@ public class User implements UserDetails {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
+    @Column(name = "last_login_time")
+    private LocalDateTime lastLoginTime;
+
     @Column(name = "PASSWORD_EXPIRY_DATE")
     @Temporal(TemporalType.TIMESTAMP)
     private Date passwordExpiryDate;
@@ -70,6 +73,10 @@ public class User implements UserDetails {
         this.failedLoginAttempts = 0;
         this.accountNonLocked = true;
         this.lockTime = null;
+    }
+
+    public void updateLastLoginTime() {
+        this.lastLoginTime = LocalDateTime.now();
     }
 
     @Override
