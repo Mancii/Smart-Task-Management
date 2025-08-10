@@ -6,18 +6,23 @@ import com.task.dto.AuthenticationRequest;
 import com.task.dto.UserDto;
 import com.task.entity.User;
 import com.task.entity.VerificationToken;
+import com.task.exception.AccountLockedException;
 import com.task.exception.BusinessException;
 import com.task.repo.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.task.utils.DateUtil;
+
+import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -80,19 +85,40 @@ public class AuthService {
 
     public AuthResponse login(AuthenticationRequest request) {
         var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new BusinessException("Invalid email or password"));
+                .orElseThrow(() -> {
+                    log.warn("Login attempt with non-existent email: {}", request.getEmail());
+                    return new BusinessException("Invalid email or password");
+                });
+
+        // Check if account is locked
+        if (!user.isAccountNonLocked()) {
+            throw new AccountLockedException("Account is locked. Please try again later or reset your password.");
+        }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException("Invalid email or password");
+            user.incrementFailedAttempts();
+            userRepository.save(user);
+            int remainingAttempts = 5 - user.getFailedLoginAttempts();
+            String message = remainingAttempts > 0
+                    ? String.format("Invalid credentials. %d attempts remaining.", remainingAttempts)
+                    : "Account locked due to multiple failed login attempts. Please try again in 1 hour";
+
+            throw new BusinessException(message);
+        }
+
+        // Reset failed attempts on successful login
+        if (user.getFailedLoginAttempts() > 0) {
+            user.resetFailedAttempts();
+            user = userRepository.save(user);
         }
 
         if (!user.isEnabled()) {
-            throw new BusinessException("Account not verified. Please check your email and verify your account.");
+            throw new BusinessException("Account not verified. Please check your email and verify your account");
         }
         
         // Check if password has expired
         if (DateUtil.isDateBeforeNow(user.getPasswordExpiryDate())) {
-            throw new BusinessException("Your password has expired. Please reset your password.");
+            throw new BusinessException("Your password has expired. Please reset your password");
         }
 
         var jwtToken = jwtService.generateToken(user);
@@ -104,6 +130,23 @@ public class AuthService {
                 .accessToken(jwtToken)
                 .refreshToken(refreshToken)
                 .build();
+    }
+
+    @Scheduled(fixedRate = 300000) // Run every 5 minutes
+    @Transactional
+    public void unlockAccounts() {
+        log.info("Running account unlock job");
+        List<User> lockedUsers = userRepository.findByAccountNonLockedFalseAndLockTimeBefore(
+                LocalDateTime.now().minusHours(1)
+        );
+
+        if (!lockedUsers.isEmpty()) {
+            log.info("Unlocking {} accounts", lockedUsers.size());
+            lockedUsers.forEach(user -> {
+                user.resetFailedAttempts();
+                userRepository.save(user);
+            });
+        }
     }
 
 }

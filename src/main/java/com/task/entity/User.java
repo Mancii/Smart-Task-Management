@@ -8,6 +8,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -48,6 +49,29 @@ public class User implements UserDetails {
     @Column(name = "ENABLED", nullable = false)
     private boolean enabled = false;
 
+    @Column(name = "failed_login_attempts")
+    private int failedLoginAttempts = 0;
+
+    @Column(name = "account_non_locked")
+    private boolean accountNonLocked = true;
+
+    @Column(name = "lock_time")
+    private LocalDateTime lockTime;
+
+    public void incrementFailedAttempts() {
+        this.failedLoginAttempts++;
+        if (this.failedLoginAttempts >= 5) {
+            this.accountNonLocked = false;
+            this.lockTime = LocalDateTime.now();
+        }
+    }
+
+    public void resetFailedAttempts() {
+        this.failedLoginAttempts = 0;
+        this.accountNonLocked = true;
+        this.lockTime = null;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
@@ -70,6 +94,15 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
+        // Check if account is locked and if the lock has expired
+        if (!accountNonLocked) {
+            if (lockTime != null && lockTime.plusHours(1).isBefore(LocalDateTime.now())) {
+                // Auto-unlock after 1 hour
+                resetFailedAttempts();
+                return true;
+            }
+            return false;
+        }
         return true;
     }
 
