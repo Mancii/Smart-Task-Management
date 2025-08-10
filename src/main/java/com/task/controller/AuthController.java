@@ -30,7 +30,7 @@ public class AuthController {
             @RequestBody @Valid AuthenticationRequest request, HttpServletRequest httpRequest) {
 
         String clientIp = getClientIp(httpRequest);
-        rateLimitService.checkRateLimit(clientIp);
+        rateLimitService.checkRateLimit(clientIp, "register");
 
         authService.register(request);
         return ResponseEntity
@@ -43,7 +43,10 @@ public class AuthController {
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthenticationRequest request) {
+    public ResponseEntity<AuthResponse> authenticate(
+            @RequestBody @Valid AuthenticationRequest request, HttpServletRequest httpRequest) {
+        String clientIp = getClientIp(httpRequest);
+        rateLimitService.checkRateLimit(clientIp, "login");
         return ResponseEntity.ok(authService.login(request));
     }
 
