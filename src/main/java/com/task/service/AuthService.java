@@ -5,7 +5,6 @@ import com.task.dto.AuthResponse;
 import com.task.dto.AuthenticationRequest;
 import com.task.dto.UserDto;
 import com.task.entity.User;
-import com.task.entity.UserRole;
 import com.task.entity.VerificationToken;
 import com.task.exception.BusinessException;
 import com.task.repo.UserRepository;
@@ -16,6 +15,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.task.utils.DateUtil;
+import java.util.Date;
 
 @Service
 @RequiredArgsConstructor
@@ -33,18 +35,31 @@ public class AuthService {
     @Value("${app.base-url}")
     private String appBaseUrl;
 
+    @Value("${security.password.expiration-days:90}")
+    private int passwordExpirationDays;
+
     @Transactional
-    public AuthResponse register(AuthenticationRequest request) {
+    public void register(AuthenticationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exist");
+            throw new BusinessException("Email already exists");
         }
+
+        // Validate password strength
+        if (request.getPassword().length() < 8) {
+            throw new BusinessException("Password must be at least 8 characters long");
+        }
+
+        // Calculate password expiry date (90 days from now by default)
+        Date passwordExpiryDate = DateUtil.addDaysToNow(passwordExpirationDays);
 
         var userDto = UserDto.builder()
                 .username(request.getUserName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(request.getRole() != null ? request.getRole() : UserRole.USER)
-                .statusId(MainConstants.ACCOUNT_ACTIVE)
+                .mobileNumber(request.getMobileNumber())
+                .role(request.getRole()) // Always default to USER role for new registrations
+                .passwordExpiryDate(passwordExpiryDate)
+                .statusId(MainConstants.ACCOUNT_LOCKED) // User is locked until email is verified
                 .enabled(false) // User is disabled until email is verified
                 .build();
 
@@ -59,32 +74,25 @@ public class AuthService {
             emailService.sendVerificationEmail(userEntity, verificationToken.getToken());
         } catch (Exception e) {
             log.error("Failed to send verification email", e);
-            // In production, you might want to handle this differently
             throw new BusinessException("Failed to send verification email. Please try again later.");
         }
-
-        // Generate tokens but user won't be able to use them until email is verified
-        var jwtToken = jwtService.generateToken(userEntity);
-        var refreshToken = jwtService.generateRefreshToken(userEntity);
-        tokenService.saveToken(jwtToken, refreshToken, userEntity.getId());
-
-        return AuthResponse.builder()
-                .accessToken(jwtToken)
-                .refreshToken(refreshToken)
-                .message("Registration successful. Please check your email to verify your account.")
-                .build();
     }
 
     public AuthResponse login(AuthenticationRequest request) {
         var user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
+                .orElseThrow(() -> new BusinessException("Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Invalid email or password");
+            throw new BusinessException("Invalid email or password");
         }
 
         if (!user.isEnabled()) {
-            throw new IllegalStateException("Account not verified. Please check your email and verify your account.");
+            throw new BusinessException("Account not verified. Please check your email and verify your account.");
+        }
+        
+        // Check if password has expired
+        if (DateUtil.isDateBeforeNow(user.getPasswordExpiryDate())) {
+            throw new BusinessException("Your password has expired. Please reset your password.");
         }
 
         var jwtToken = jwtService.generateToken(user);
