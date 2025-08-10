@@ -32,10 +32,8 @@ public class AuthenticationRequest {
     @Size(max = 100, message = "Email must not exceed 100 characters")
     private String email;
 
-    @NotBlank(message = "Phone number is required")
     @Pattern(regexp = "^(010|011|012|015)\\d{8}$", message = "Invalid phone number format. Use international format")
     private String mobileNumber;
 
-    @NotNull
     private UserRole role;
 }
