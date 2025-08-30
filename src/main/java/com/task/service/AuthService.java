@@ -96,33 +96,15 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            // Increment failed login attempts
             user.incrementFailedAttempts();
             userRepository.save(user);
-            int remainingAttempts = 5 - user.getFailedLoginAttempts();
-            String message = remainingAttempts > 0
-                    ? String.format("Invalid credentials. %d attempts remaining.", remainingAttempts)
-                    : "Account locked due to multiple failed login attempts. Please try again in 1 hour";
-
-            throw new BusinessException(message);
+            throw new BusinessException("Invalid email or password");
         }
-
-        // Update last login time
-        user.updateLastLoginTime();
-
-        // Reset failed attempts on successful login
-        if (user.getFailedLoginAttempts() > 0) {
-            user.resetFailedAttempts();
-        }
-
+        
+        // Check if account is verified
         if (!user.isEnabled()) {
-            throw new BusinessException("Account not verified. Please check your email and verify your account");
-        }
-
-        // Check if password has expired (only if user has logged in before and it's been more than 3 months)
-        if (user.getLastLoginTime() != null &&
-                user.getLastLoginTime().isBefore(LocalDateTime.now().minusMonths(3)) &&
-                DateUtil.isDateBeforeNow(user.getPasswordExpiryDate())) {
-            throw new BusinessException("Your password has expired. Please reset your password");
+            throw new BusinessException("Please verify your email address before logging in.");
         }
         
         // Check if password has expired

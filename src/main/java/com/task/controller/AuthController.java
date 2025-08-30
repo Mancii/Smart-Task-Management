@@ -24,87 +24,80 @@ public class AuthController {
     private final VerificationTokenService verificationTokenService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse> register(
+    public ResponseEntity<BaseResponse<String>> register(
             @RequestBody @Valid AuthenticationRequest request) {
         authService.register(request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
-            .body(new ApiResponse(
-                true,
-                "Registration successful. Please check your email to verify your account.",
-                null
-            ));
+            .body(BaseResponse.success("Registration successful. Please check your email to verify your account.", ""));
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthResponse> authenticate(
+    public ResponseEntity<BaseResponse<AuthResponse>> authenticate(
             @RequestBody @Valid AuthenticationRequest request) {
-        return ResponseEntity.ok(authService.login(request));
+        AuthResponse authResponse = authService.login(request);
+        return ResponseEntity.ok(BaseResponse.success("Authentication successful", authResponse));
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<?> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
-        return ResponseEntity.ok(tokenService.
-                getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken())
-        );
+    public ResponseEntity<BaseResponse<?>> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
+        Object response = tokenService.getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken());
+        return ResponseEntity.ok(BaseResponse.success("Token refreshed successfully", response));
     }
 
     @PostMapping("/resetPassword")
-    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordForm passwordForm)
+    public ResponseEntity<BaseResponse<String>> resetPassword(@RequestBody ResetPasswordForm passwordForm)
             throws Exception {
-
         jwtUserDetailsService.resetUserPassword(passwordForm);
-
-        return ResponseEntity.ok(new LogoutResponse("Reset Password taken Successfully"));
-
+        return ResponseEntity.ok(BaseResponse.success("Password reset successful. You can now log in with your new password.", ""));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(@RequestHeader String Authorization) {
-        Authorization = Authorization.substring(7);
-
+    public ResponseEntity<BaseResponse<String>> logout(@RequestHeader String Authorization) {
+        String token = Authorization.substring(7);
         try {
-            return ResponseEntity.ok(tokenService.logout(Authorization));
+            tokenService.logout(token);
+            return ResponseEntity.ok(BaseResponse.success("Successfully logged out", ""));
         } catch (Exception e) {
-            return ResponseEntity.ok(new ErrorResponse("invalid Token", 498));
+            return ResponseEntity
+                .status(498)
+                .body(BaseResponse.error("Logout failed", "AUTH_LOGOUT_FAILED", e.getMessage()));
         }
-
     }
 
     @PostMapping("/kill")
-    public ResponseEntity<?> killSession(@RequestParam long id) {
+    public ResponseEntity<BaseResponse<String>> killSession(@RequestParam long id) {
         try {
-            return ResponseEntity.ok(tokenService.kill(id));
+            tokenService.kill(id);
+            return ResponseEntity.ok(BaseResponse.success("Session terminated successfully", ""));
         } catch (Exception e) {
-            return ResponseEntity.ok(new ErrorResponse("invalid Token", 498));
+            return ResponseEntity
+                .status(498)
+                .body(BaseResponse.error("Failed to terminate session", "SESSION_TERMINATION_FAILED", e.getMessage()));
         }
     }
 
     @GetMapping("/verify-email")
-    public ResponseEntity<ApiResponse> verifyEmail(@RequestParam String token) {
+    public ResponseEntity<BaseResponse<String>> verifyEmail(@RequestParam String token) {
         try {
             verificationTokenService.verifyEmailToken(token);
-            
-            return ResponseEntity.ok(new ApiResponse(
-                true,
-                "Email verified successfully. You can now log in.",
-                null
-            ));
-            
+            return ResponseEntity.ok(
+                BaseResponse.success("Email verified successfully. You can now log in.", "")
+            );
         } catch (InvalidTokenException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse(
-                    false,
+                .body(BaseResponse.error(
                     e.getMessage(),
-                    null
+                    "INVALID_VERIFICATION_TOKEN",
+                    "The verification token is invalid or has expired."
                 ));
         } catch (Exception e) {
             log.error("Email verification failed", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ApiResponse(
-                    false,
+                .body(BaseResponse.error(
                     "An error occurred while verifying your email. Please try again.",
-                    null
+                    "VERIFICATION_FAILED",
+                    e.getMessage()
                 ));
         }
     }
