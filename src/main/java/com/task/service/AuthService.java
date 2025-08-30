@@ -3,7 +3,7 @@ package com.task.service;
 import com.task.constants.MainConstants;
 import com.task.dto.AuthResponse;
 import com.task.dto.AuthenticationRequest;
-import com.task.dto.UserDto;
+import com.task.dto.UserRegistrationDto;
 import com.task.entity.User;
 import com.task.entity.VerificationToken;
 import com.task.exception.AccountLockedException;
@@ -57,7 +57,7 @@ public class AuthService {
         // Calculate password expiry date (90 days from now by default)
         Date passwordExpiryDate = DateUtil.addDaysToNow(passwordExpirationDays);
 
-        var userDto = UserDto.builder()
+        var userDto = UserRegistrationDto.builder()
                 .username(request.getUserName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
