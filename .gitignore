@@ -25,3 +25,6 @@ target/
 *.zip
 *.tar.gz
 *.rar
+
+# vs code
+.vscode
