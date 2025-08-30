@@ -9,7 +9,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -25,47 +24,47 @@ public class RateLimitService {
     private final CacheManager cacheManager;
 
     public void checkRateLimit(String ip, String type) {
+        checkRateLimit(ip, type, MAX_ATTEMPTS, ATTEMPT_WINDOW_SECONDS);
+    }
+
+    public void checkRateLimit(String ip, String type, int maxAttempts, int windowSeconds) {
         Cache cache = cacheManager.getCache(AUTH_ATTEMPTS_CACHE);
         if (cache == null) {
             log.error("Rate limit cache not initialized");
             return;
         }
 
-        String cacheKey = String.format("%s:%s:%d", type, ip, Instant.now().getEpochSecond() / 60);
-        Cache.ValueWrapper valueWrapper = cache.get(cacheKey);
-
-        if (valueWrapper != null) {
-            AtomicInteger attempts = (AtomicInteger) valueWrapper.get();
-            if (attempts != null && attempts.incrementAndGet() > MAX_ATTEMPTS) {
+        // Use a simpler key since Caffeine handles TTL
+        String cacheKey = String.format("%s:%s", type, ip);
+        
+        // Get or create the counter atomically
+        AtomicInteger attempts = cache.get(cacheKey, () -> new AtomicInteger(1));
+        
+        if (attempts != null) {
+            int currentAttempts = attempts.incrementAndGet();
+            log.debug("Rate limit check - IP: {}, Type: {}, Attempts: {}/{}, Window: {}s", 
+                ip, type, currentAttempts, maxAttempts, windowSeconds);
+                
+            if (currentAttempts > maxAttempts) {
                 log.warn("Rate limit exceeded for IP: {} (type: {})", ip, type);
-                throw new RateLimitExceededException("Too many attempts. Please try again after 2 minutes");
+                throw new RateLimitExceededException(
+                    String.format("Rate limit exceeded. Please try again in %d seconds", windowSeconds)
+                );
             }
-        } else {
-            cache.put(cacheKey, new AtomicInteger(1));
         }
     }
 
     public void resetRateLimit(String ip, String type) {
         Cache cache = cacheManager.getCache(AUTH_ATTEMPTS_CACHE);
         if (cache != null) {
-            // Evict all entries for this IP and type
-            Object nativeCache = cache.getNativeCache();
-            if (nativeCache instanceof Map) {
-                ((Map<?, ?>) nativeCache).keySet().stream()
-                    .filter(String.class::isInstance)
-                    .map(String.class::cast)
-                    .filter(key -> key.startsWith(type + ":" + ip + ":"))
-                    .forEach(cache::evict);
-                
-                log.info("Rate limit reset for IP: {} (type: {}) by admin: {}", 
-                    ip, type, getCurrentAdminUsername());
-            } else {
-                log.warn("Cache implementation does not support key enumeration");
-            }
+            String cacheKey = String.format("%s:%s", type, ip);
+            cache.evict(cacheKey);
+            log.info("Rate limit reset for IP: {} (type: {}) by admin: {}", 
+                ip, type, getCurrentAdminUsername());
         }
     }
 
-    public Map<String, Object> getIpAttempts(String ip, String type) {
+    public Map<String, Object> getIpAttempts(String ip, String type, int maxAttempts, int windowSeconds) {
         Cache cache = cacheManager.getCache(AUTH_ATTEMPTS_CACHE);
         Map<String, Object> result = new HashMap<>();
         result.put("ip", ip);
@@ -78,20 +77,22 @@ public class RateLimitService {
             return result;
         }
 
-        // Count all attempts in the current minute window
-        long currentMinute = Instant.now().getEpochSecond() / 60;
-        String currentMinuteKey = String.format("%s:%s:%d", type, ip, currentMinute);
-        
-        int attempts = Optional.ofNullable(cache.get(currentMinuteKey, AtomicInteger.class))
+        String cacheKey = String.format("%s:%s", type, ip);
+        int attempts = Optional.ofNullable(cache.get(cacheKey, AtomicInteger.class))
             .map(AtomicInteger::get)
             .orElse(0);
             
         result.put("attempts", attempts);
-        result.put("isBlocked", attempts > MAX_ATTEMPTS);
-        result.put("maxAttempts", MAX_ATTEMPTS);
-        result.put("windowSeconds", ATTEMPT_WINDOW_SECONDS);
+        result.put("isBlocked", attempts > maxAttempts);
+        result.put("maxAttempts", maxAttempts);
+        result.put("windowSeconds", windowSeconds);
         
         return result;
+    }
+    
+    // Backward compatibility method
+    public Map<String, Object> getIpAttempts(String ip, String type) {
+        return getIpAttempts(ip, type, MAX_ATTEMPTS, ATTEMPT_WINDOW_SECONDS);
     }
     
     public boolean isIpBlocked(String ip, String type) {

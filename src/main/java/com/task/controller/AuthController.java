@@ -3,7 +3,6 @@ package com.task.controller;
 import com.task.dto.*;
 import com.task.exception.InvalidTokenException;
 import com.task.service.*;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,15 +22,10 @@ public class AuthController {
     private final TokenService tokenService;
     private final JwtUserDetailsService jwtUserDetailsService;
     private final VerificationTokenService verificationTokenService;
-    private final RateLimitService rateLimitService;
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(
-            @RequestBody @Valid AuthenticationRequest request, HttpServletRequest httpRequest) {
-
-        String clientIp = getClientIp(httpRequest);
-        rateLimitService.checkRateLimit(clientIp, "register");
-
+            @RequestBody @Valid AuthenticationRequest request) {
         authService.register(request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
@@ -44,9 +38,7 @@ public class AuthController {
 
     @PostMapping("/authenticate")
     public ResponseEntity<AuthResponse> authenticate(
-            @RequestBody @Valid AuthenticationRequest request, HttpServletRequest httpRequest) {
-        String clientIp = getClientIp(httpRequest);
-        rateLimitService.checkRateLimit(clientIp, "login");
+            @RequestBody @Valid AuthenticationRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 
@@ -80,7 +72,7 @@ public class AuthController {
     }
 
     @PostMapping("/kill")
-    public ResponseEntity<?> killSession(@RequestParam long id) throws Exception {
+    public ResponseEntity<?> killSession(@RequestParam long id) {
         try {
             return ResponseEntity.ok(tokenService.kill(id));
         } catch (Exception e) {
@@ -117,29 +109,4 @@ public class AuthController {
         }
     }
 
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getHeader("WL-Proxy-Client-IP");
-        }
-        if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        return ip;
-    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
