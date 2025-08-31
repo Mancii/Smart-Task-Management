@@ -32,7 +32,7 @@ public class RateLimitService {
         String cacheKey = String.format("%s:%s", type, ip);
         
         // Get or create the counter atomically
-        AtomicInteger attempts = cache.get(cacheKey, () -> new AtomicInteger(1));
+        AtomicInteger attempts = cache.get(cacheKey, () -> new AtomicInteger(0));
         
         if (attempts != null) {
             int currentAttempts = attempts.incrementAndGet();
