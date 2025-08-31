@@ -40,8 +40,8 @@ public class AuthController {
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<BaseResponse<?>> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
-        Object response = tokenService.getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken());
+    public ResponseEntity<BaseResponse<AuthResponse>> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
+        AuthResponse response = tokenService.getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken());
         return ResponseEntity.ok(BaseResponse.success("Token refreshed successfully", response));
     }
 
@@ -52,8 +52,8 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<String>> logout(@RequestHeader String Authorization) {
-        String token = Authorization.substring(7);
+    public ResponseEntity<BaseResponse<String>> logout(@RequestHeader String authorization) {
+        String token = authorization.substring(7);
         try {
             tokenService.logout(token);
             return ResponseEntity.ok(BaseResponse.success("Successfully logged out", ""));

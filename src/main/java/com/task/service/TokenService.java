@@ -55,13 +55,12 @@ public class TokenService {
         }
     }
 
-    public LogoutResponse logout(String token) {
-        Integer x = tokenRepo.invalidateToken(token, new Date());
+    public void logout(String token) {
+        Integer invalidateToken = tokenRepo.invalidateToken(token, Instant.now());
 
-        if (x == null || x == 0)
+        if (invalidateToken == null || invalidateToken == 0)
             throw new IllegalArgumentException("Error has occurred");
 
-        return new LogoutResponse("logout successfully");
     }
 
     public LogoutResponse kill(long tokenId) {
