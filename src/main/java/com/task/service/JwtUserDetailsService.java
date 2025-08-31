@@ -4,17 +4,20 @@ import com.task.constants.MainConstants;
 import com.task.dto.ResetPasswordForm;
 import com.task.entity.User;
 import com.task.repo.UserRepository;
-import com.task.utils.Utils;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Calendar;
 
+@Slf4j
 @AllArgsConstructor
 @Service
 public class JwtUserDetailsService implements UserDetailsService {
@@ -30,35 +33,44 @@ public class JwtUserDetailsService implements UserDetailsService {
 
     public User loadUserByEmail(String email) throws UsernameNotFoundException {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("email not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("user not found"));
     }
 
-    public void resetUserPassword(ResetPasswordForm passwordForm) throws Exception {
-//        String pattern = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()–[{}]:;',?/*~$^+=<>]).{8,20}$";
-//        Pattern pattern2 = Pattern.compile(pattern);
-//        Matcher matcher = pattern2.matcher(passwordForm.getNewPassword());
-//
-//        if (!matcher.matches())
-//            throw new Exception("Passwords must contain at least 8 characters, including UPPERCASE, lowercase letters, numbers, and special characters");
-
-        User jwtUser = null;
-        if (Utils.isNotEmpty(passwordForm.getEmail()))
-            jwtUser = loadUserByEmail(passwordForm.getEmail());
-
-        if (jwtUser == null)
-            throw new Exception("Invalid credentials");
-
-        if (isAccountSuspended(jwtUser.getStatusId()))
-            throw new LockedException("account is suspended");
-
-        if (isAccountLocked(jwtUser))
-            throw new LockedException("Account is temporarily locked, please try again after 30 minutes");
-
-        if (Utils.isNotEmpty(passwordForm.getNewPassword())) {
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.MONTH, 6);
-            jwtUser.setPasswordExpiryDate(calendar.getTime());
-            jwtUser.setPassword(passwordEncoder.encode(passwordForm.getNewPassword()));
+    /**
+     * Find user by email or username from the password form
+     */
+    private User findUserByIdentifiers(ResetPasswordForm passwordForm) {
+        User user = findUserByEmail(passwordForm.getEmail());
+        
+        if (user == null) {
+            user = findUserByUsername(passwordForm.getUserName());
+            
+            if (user != null && isEmailMismatch(user.getEmail(), passwordForm.getEmail())) {
+                throw new BadCredentialsException("Invalid request");
+            }
+        }
+        
+        return user;
+    }
+    
+    private User findUserByEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return null;
+        }
+        
+        try {
+            return loadUserByEmail(email);
+        } catch (UsernameNotFoundException e) {
+            return null;
+        }
+    }
+    
+    private User findUserByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
+        
+        try {
         }
 
         if (Utils.isNotEmpty(passwordForm.getEmail())) {
@@ -66,52 +78,53 @@ public class JwtUserDetailsService implements UserDetailsService {
         }
 
         if (Utils.isNotEmpty(passwordForm.getMobile())) {
-            jwtUser.setMobileNumber(passwordForm.getMobile());
+        if (isAccountLocked(jwtUser.getStatusId())) {
+            jwtUser.setStatusId(MainConstants.ACCOUNT_ACTIVE);
+            jwtUser.resetFailedAttempts();
+            log.info("Account unlocked for user: {}", jwtUser.getUsername());
         }
 
-        userRepository.save(jwtUser);
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, 6);
+        jwtUser.setPasswordExpiryDate(calendar.getTime());
+        jwtUser.setPassword(passwordEncoder.encode(passwordForm.getNewPassword()));
 
+        userRepository.save(jwtUser);
+        log.info("Password reset successfully for user: {}", jwtUser.getUsername());
     }
 
     public boolean isAccountSuspended(long statusId) {
         return statusId == MainConstants.ACCOUNT_SUSPENDED;
     }
 
-    public boolean isAccountLocked(User jwtUser) {
-        if (jwtUser.getStatusId() == MainConstants.ACCOUNT_LOCKED) {
-//            if (!unLockUserAccount(jwtUser)) {
-//                return true;
-//            }
-        }
-        return false;
+    public boolean isAccountLocked(long statusId) {
+        return statusId == MainConstants.ACCOUNT_LOCKED;
     }
 
-//    private boolean unLockUserAccount(User jwtUser) {
-//
-//        Calendar currentCal = Calendar.getInstance();
-//        Calendar lockedCal = Calendar.getInstance();
-//        Date lockedDate = jwtUser.getLastLockedTime() != null ? jwtUser.getLastLockedTime()
-//                : jwtUser.getSecondLockedTime() != null ? jwtUser.getSecondLockedTime()
-//                : jwtUser.getFirstLockedTime() != null ? jwtUser.getFirstLockedTime() : null;
-//        lockedCal.setTime(lockedDate);
-//        lockedCal.add(Calendar.MINUTE, 5);
-//
-//        if (currentCal.before(lockedCal)) {
-//            return false;
-//        }
-//
-//        jwtUser.setStatusId((long) MainConstants.ACCOUNT_UNLOCKED);
-//        jwtUser.setFirstLockedTime(null);
-//        jwtUser.setSecondLockedTime(null);
-//        jwtUser.setLastLockedTime(null);
-//        jwtUser.setNumberOfLocks(0L);
-//        jwtUser.setNumberOfFailedLogin(0L);
-//        jwtUser.setUserId(jwtUser.getUserId());
-//
-//        userRepository.save(jwtUser);
-//        return true;
-//
-//    }
+    public void updatePassword(User user, String oldPassword, String newPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new BadCredentialsException("Old password is incorrect");
+        }
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, 6);
+        user.setPasswordExpiryDate(calendar.getTime());
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+//        invalidateUserSessions(user); // logout everywhere except this session
+
+        userRepository.save(user);
+    }
+
+    public void updateProfile(User user, String email, String mobile) {
+        if (StringUtils.hasText(email)) {
+            user.setEmail(email);
+        }
+        if (StringUtils.hasText(mobile)) {
+            user.setMobileNumber(mobile);
+        }
+        userRepository.save(user);
+    }
 
 }
 
