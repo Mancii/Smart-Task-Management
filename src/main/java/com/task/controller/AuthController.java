@@ -46,8 +46,7 @@ public class AuthController {
     }
 
     @PostMapping("/resetPassword")
-    public ResponseEntity<BaseResponse<String>> resetPassword(@RequestBody ResetPasswordForm passwordForm)
-            throws Exception {
+    public ResponseEntity<BaseResponse<String>> resetPassword(@RequestBody @Valid ResetPasswordForm passwordForm) {
         jwtUserDetailsService.resetUserPassword(passwordForm);
         return ResponseEntity.ok(BaseResponse.success("Password reset successful. You can now log in with your new password.", ""));
     }
