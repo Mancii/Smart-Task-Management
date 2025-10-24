@@ -56,20 +56,23 @@ public class TokenService {
     }
 
     public void logout(String token) {
+        if (token == null || token.isBlank()) {
+            throw new IllegalArgumentException("Token cannot be null or empty");
+        }
+        
         Integer invalidateToken = tokenRepo.invalidateToken(token, Instant.now());
 
         if (invalidateToken == null || invalidateToken == 0)
-            throw new IllegalArgumentException("Error has occurred");
-
+            throw new IllegalArgumentException("Failed to logout - token not found or already invalidated");
     }
 
     public LogoutResponse kill(long tokenId) {
-        Integer x = tokenRepo.invalidateTokenById(tokenId, new Date());
+        Integer x = tokenRepo.invalidateTokenById(tokenId, Instant.now());
 
         if (x == null || x == 0)
-            throw new IllegalArgumentException("Error has occurred");
+            throw new IllegalArgumentException("Failed to invalidate token - token not found or already invalidated");
 
-        return new LogoutResponse("logout successfully");
+        return new LogoutResponse("Session terminated successfully");
     }
 
     public AuthResponse getUserNameFromTokenUsingRefreshToken(String refreshToken) {

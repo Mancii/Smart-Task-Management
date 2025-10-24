@@ -199,6 +199,30 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(ErrorCode.BUSINESS_ERROR.getCode())
+                .message(ex.getMessage())
+                .details("Business logic validation failed")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountLockedException(AccountLockedException ex) {
+        ErrorResponse errorResponse = ErrorResponse.builder()
+                .code(ErrorCode.ACCOUNT_LOCKED.getCode())
+                .message(ex.getMessage())
+                .details("Account is temporarily locked due to security reasons")
+                .timestamp(LocalDateTime.now())
+                .build();
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.LOCKED);
+    }
+
     @ExceptionHandler(RateLimitExceededException.class)
     public ResponseEntity<ErrorResponse> handleRateLimitExceededException(RateLimitExceededException ex) {
         ErrorResponse errorResponse = ErrorResponse.builder()

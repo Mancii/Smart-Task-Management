@@ -40,7 +40,8 @@ public enum ErrorCode {
     INVALID_REFRESH_TOKEN(6009, "Invalid refresh token"),
     DATABASE_ERROR(6010, "Database operation failed"),
     EXTERNAL_SERVICE_ERROR(6011, "Error calling external service"),
-    RESOURCE_NOT_FOUND(6012, "Requested resource not found");
+    RESOURCE_NOT_FOUND(6012, "Requested resource not found"),
+    BUSINESS_ERROR(6013, "Business logic validation failed");
 
     private final int code;
     private final String message;

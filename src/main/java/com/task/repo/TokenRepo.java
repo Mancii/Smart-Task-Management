@@ -9,7 +9,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
-import java.util.Date;
 import java.util.Optional;
 
 @Repository
@@ -26,6 +25,6 @@ public interface TokenRepo extends JpaRepository<JwtEntity, Long>{
 	@Modifying
 	@Transactional
 	@Query("update JwtEntity j set j.validId = 0, j.updatedAt = :currentDate where j.tokenId = :tokenId")
-	Integer invalidateTokenById(@Param("tokenId") Long tokenId, @Param("currentDate") Date currentDate);
+	Integer invalidateTokenById(@Param("tokenId") Long tokenId, @Param("currentDate") Instant currentDate);
 
 }
