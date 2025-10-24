@@ -100,7 +100,7 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonLocked() {
+    public synchronized boolean isAccountNonLocked() {
         // Check if account is locked and if the lock has expired
         if (!accountNonLocked) {
             if (lockTime != null && lockTime.plusHours(1).isBefore(LocalDateTime.now())) {

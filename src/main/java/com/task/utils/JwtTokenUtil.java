@@ -136,8 +136,4 @@ public class JwtTokenUtil implements Serializable {
 ////    }
 //
 
-    public static class DateUtil {
-
-
-    }
 }

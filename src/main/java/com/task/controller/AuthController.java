@@ -1,6 +1,7 @@
 package com.task.controller;
 
 import com.task.dto.*;
+import com.task.exception.BusinessException;
 import com.task.exception.InvalidTokenException;
 import com.task.service.*;
 import jakarta.validation.Valid;
@@ -40,9 +41,20 @@ public class AuthController {
     }
 
     @PostMapping("/refreshToken")
-    public ResponseEntity<BaseResponse<AuthResponse>> refreshToken(@RequestBody JwtRefreshRequest jwtRefreshRequest) {
-        AuthResponse response = tokenService.getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken());
-        return ResponseEntity.ok(BaseResponse.success("Token refreshed successfully", response));
+    public ResponseEntity<BaseResponse<AuthResponse>> refreshToken(@RequestBody @Valid JwtRefreshRequest jwtRefreshRequest) {
+        try {
+            AuthResponse response = tokenService.getUserNameFromTokenUsingRefreshToken(jwtRefreshRequest.getRefreshToken());
+            return ResponseEntity.ok(BaseResponse.success("Token refreshed successfully", response));
+        } catch (BusinessException e) {
+            return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(BaseResponse.error("Token refresh failed", "TOKEN_REFRESH_FAILED", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Unexpected error during token refresh", e);
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(BaseResponse.error("Token refresh failed", "TOKEN_REFRESH_FAILED", "An unexpected error occurred"));
+        }
     }
 
     @PostMapping("/resetPassword")
@@ -52,15 +64,26 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<BaseResponse<String>> logout(@RequestHeader String authorization) {
+    public ResponseEntity<BaseResponse<String>> logout(@RequestHeader("Authorization") String authorization) {
+        if (authorization == null || !authorization.startsWith("Bearer ")) {
+            return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(BaseResponse.error("Invalid authorization header", "INVALID_AUTH_HEADER", "Authorization header must start with 'Bearer '"));
+        }
+        
         String token = authorization.substring(7);
         try {
             tokenService.logout(token);
             return ResponseEntity.ok(BaseResponse.success("Successfully logged out", ""));
-        } catch (Exception e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity
-                .status(498)
+                .status(HttpStatus.BAD_REQUEST)
                 .body(BaseResponse.error("Logout failed", "AUTH_LOGOUT_FAILED", e.getMessage()));
+        } catch (Exception e) {
+            log.error("Unexpected error during logout", e);
+            return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(BaseResponse.error("Logout failed", "AUTH_LOGOUT_FAILED", "An unexpected error occurred"));
         }
     }
 

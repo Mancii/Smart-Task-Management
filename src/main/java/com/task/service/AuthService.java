@@ -112,6 +112,9 @@ public class AuthService {
             throw new BusinessException("Your password has expired. Please reset your password");
         }
 
+        // Reset failed attempts on successful login and update last login time
+        user.resetFailedAttempts();
+        user.updateLastLoginTime();
         user = userRepository.save(user);
 
         var jwtToken = jwtService.generateToken(user);
