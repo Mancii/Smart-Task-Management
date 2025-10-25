@@ -8,8 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 public class SmartTaskManagementApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(SmartTaskManagementApplication.class, args);
-	}
-
+public static void main(String[] args) {
+	SpringApplication.run(SmartTaskManagementApplication.class, args);
+}
 }

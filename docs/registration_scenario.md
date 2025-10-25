@@ -9,7 +9,6 @@
      - Password
      - Other required fields
    - Clicks "Register" button
-
 2. **Server Processes Registration**
    - System validates the input data
    - Checks if email is already in use
@@ -17,14 +16,12 @@
    - Generates a unique verification token (valid for 24 hours)
    - Sends verification email to the provided email address
    - Returns success response with a message to check email
-
 3. **User Receives Verification Email**
    - Email contains:
      - Greeting with username
      - Verification link with token
      - Expiration notice (24 hours)
      - Instructions to click the link
-
 4. **User Clicks Verification Link**
    - System verifies the token:
      - Checks if token exists
@@ -37,7 +34,6 @@
    - If invalid/expired:
      - Shows appropriate error message
      - Option to resend verification email
-
 5. **User Logs In**
    - User attempts to log in with credentials
    - System verifies:
@@ -56,15 +52,12 @@
 - **Email Already Exists**
   - Error message: "Email already in use"
   - Suggests password reset if needed
-
 - **Expired Token**
   - Message: "Verification link has expired"
   - Option to resend verification email
-
 - **Invalid Token**
   - Message: "Invalid verification link"
   - Suggests trying again or registering
-
 - **Email Sending Failure**
   - Logs error server-side
   - Returns user-friendly message
@@ -86,3 +79,4 @@
 - Add password strength requirements
 - Include welcome email after successful verification
 - Add logging for security events
+
