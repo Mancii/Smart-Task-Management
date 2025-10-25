@@ -49,6 +49,7 @@ The complete OpenAPI generator and code quality system is still fully functional
 ### 📝 Example: Your Code Style Preserved
 
 **Before (your original style)**:
+
 ```java
 @PostMapping("/register")
 public ResponseEntity<BaseResponse<String>> register(
@@ -61,6 +62,7 @@ public ResponseEntity<BaseResponse<String>> register(
 ```
 
 **After Spotless (style preserved)**:
+
 ```java
 @PostMapping("/register")
 public ResponseEntity<BaseResponse<String>> register(
@@ -92,6 +94,7 @@ make quality
 ### 🔍 What Gets Fixed (Examples)
 
 **Import organization**:
+
 ```java
 // Before
 import org.springframework.web.bind.annotation.*;
@@ -107,6 +110,7 @@ import com.task.dto.*;
 ```
 
 **Trailing whitespace removal**:
+
 ```java
 // Before
 public class MyClass {    

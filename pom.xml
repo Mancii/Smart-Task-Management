@@ -211,16 +211,15 @@
         <artifactId>spotless-maven-plugin</artifactId>
         <version>2.43.0</version>
         <configuration>
-          <java>
-            <!-- Only essential cleanup - preserve all original formatting -->
-            <importOrder>
-              <order>java,javax,jakarta,org,com,</order>
-            </importOrder>
-            <removeUnusedImports/>
-            <endWithNewline/>
-            <trimTrailingWhitespace/>
-            <!-- No code reformatting at all -->
-          </java>
+          <!-- Java formatting completely disabled to preserve original style -->
+          <!-- <java>
+						<importOrder>
+							<order>java,javax,jakarta,org,com,</order>
+						</importOrder>
+						<removeUnusedImports/>
+						<endWithNewline/>
+						<trimTrailingWhitespace/>
+					</java> -->
           <pom>
             <sortPom>
               <expandEmptyElements>false</expandEmptyElements>

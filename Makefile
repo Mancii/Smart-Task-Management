@@ -65,11 +65,11 @@ test:
 	@./mvnw test
 	@echo "$(GREEN)✅ Tests completed$(RESET)"
 
-## Format code using Spotless
+## Format code using Spotless (Java formatting disabled)
 format:
-	@echo "$(YELLOW)Formatting code with Spotless...$(RESET)"
+	@echo "$(YELLOW)Applying Spotless formatting (Java code untouched)...$(RESET)"
 	@./mvnw spotless:apply
-	@echo "$(GREEN)✅ Code formatting completed$(RESET)"
+	@echo "$(GREEN)✅ Non-Java formatting completed - Java code style preserved$(RESET)"
 
 ## Run code quality checks
 check:

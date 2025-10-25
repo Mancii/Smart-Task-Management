@@ -66,18 +66,18 @@ if ! command -v mvn &> /dev/null; then
     exit 1
 fi
 
-# Step 1: Format code with Spotless (conservative mode)
+# Step 1: Spotless formatting (Java formatting disabled to preserve original style)
 if [ "$FIX_MODE" = true ]; then
-    print_status "Applying minimal code formatting (imports, whitespace)..."
+    print_status "Applying Spotless formatting (Java code formatting disabled)..."
     mvn spotless:apply
-    print_success "Minimal formatting applied - original indentation preserved"
+    print_success "Non-Java formatting applied - Java code style completely preserved"
 else
-    print_status "Checking code formatting..."
+    print_status "Checking Spotless formatting (Java formatting disabled)..."
     if mvn spotless:check; then
-        print_success "Code formatting is correct"
+        print_success "Formatting check passed"
     else
-        print_warning "Minor formatting issues found. Run with --fix to apply minimal fixes."
-        print_warning "Note: This will only fix imports and whitespace, preserving your indentation style."
+        print_warning "Non-Java formatting issues found (Markdown, POM, etc.)"
+        print_warning "Note: Java code formatting is disabled to preserve your original style"
     fi
 fi
 

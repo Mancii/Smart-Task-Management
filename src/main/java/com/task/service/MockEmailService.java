@@ -1,72 +1,72 @@
 package com.task.service;
 
-import java.io.IOException;
-import java.time.Year;
-import java.util.Map;
-
+import com.task.entity.User;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
-
-import com.task.entity.User;
-
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.time.Year;
+import java.util.Map;
 
 @Service
 @Slf4j
 @ConditionalOnProperty(name = "app.email.mock", havingValue = "true")
 public class MockEmailService implements EmailServiceInterface {
-private final TemplateService templateService;
-private final String fromEmail;
-private final String appBaseUrl;
+    private final TemplateService templateService;
+    private final String fromEmail;
+    private final String appBaseUrl;
 
-public MockEmailService(
-	@Value("${app.base-url}") String appBaseUrl,
-	@Value("${app.email.sender}") String sender,
-	TemplateService templateService) {
-	this.fromEmail = sender;
-	this.appBaseUrl = appBaseUrl;
-	this.templateService = templateService;
-}
+    public MockEmailService(@Value("${app.base-url}") String appBaseUrl,
+                            @Value("${app.email.sender}") String sender,
+                            TemplateService templateService) {
+        this.fromEmail = sender;
+        this.appBaseUrl = appBaseUrl;
+        this.templateService = templateService;
+    }
 
-@Override
-public void sendVerificationEmail(User user, String token) throws IOException {
-	String verificationLink = String.format("%s/api/auth/verify-email?token=%s", appBaseUrl, token);
+    @Override
+    public void sendVerificationEmail(User user, String token) throws IOException {
+        String verificationLink = String.format("%s/api/auth/verify-email?token=%s",
+                appBaseUrl, token);
 
-	// Prepare template variables
-	Map<String, Object> variables =
-		Map.of(
-			"username", user.getUsername(),
-			"verificationLink", verificationLink,
-			"currentYear", Year.now().getValue());
+        // Prepare template variables
+        Map<String, Object> variables = Map.of(
+                "username", user.getUsername(),
+                "verificationLink", verificationLink,
+                "currentYear", Year.now().getValue()
+        );
 
-	// Process template
-	String htmlContent = templateService.processTemplate("verification-email.html", variables);
+        // Process template
+        String htmlContent = templateService.processTemplate("verification-email.html", variables);
 
-	String emailContent =
-		String.format(
-			"\n=== MOCK EMAIL SENT ===\n"
-				+ "From: %s\n"
-				+ "To: %s <%s>\n"
-				+ "Subject: Verify Your Email Address\n\n"
-				+ "%s\n"
-				+ "=====================\n",
-			fromEmail, user.getUsername(), user.getEmail(), htmlContent);
+        String emailContent = String.format(
+                "\n=== MOCK EMAIL SENT ===\n" +
+                "From: %s\n" +
+                "To: %s <%s>\n" +
+                "Subject: Verify Your Email Address\n\n" +
+                "%s\n" +
+                "=====================\n",
+                fromEmail,
+                user.getUsername(),
+                user.getEmail(),
+                htmlContent
+        );
 
-	log.info(emailContent);
-}
+        log.info(emailContent);
+    }
 
-@Override
-public void sendPasswordResetEmail(User user, String resetUrl, String token) {
-	log.info(
-		"\n=== MOCK PASSWORD RESET EMAIL SENT ===\n"
-			+ "To: {} <{}>\n"
-			+ "Reset URL: {}\n"
-			+ "Token: {}\n"
-			+ "==============================\n",
-		user.getUsername(),
-		user.getEmail(),
-		resetUrl,
-		token);
-}
+    @Override
+    public void sendPasswordResetEmail(User user, String resetUrl, String token) {
+        log.info("\n=== MOCK PASSWORD RESET EMAIL SENT ===\n" +
+                "To: {} <{}>\n" +
+                "Reset URL: {}\n" +
+                "Token: {}\n" +
+                "==============================\n",
+                user.getUsername(),
+                user.getEmail(),
+                resetUrl,
+                token
+        );
+    }
 }
