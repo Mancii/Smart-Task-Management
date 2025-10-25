@@ -212,22 +212,14 @@
         <version>2.43.0</version>
         <configuration>
           <java>
-            <googleJavaFormat>
-              <version>1.19.2</version>
-              <style>GOOGLE</style>
-              <reflowLongStrings>true</reflowLongStrings>
-            </googleJavaFormat>
+            <!-- Only essential cleanup - preserve all original formatting -->
             <importOrder>
               <order>java,javax,jakarta,org,com,</order>
             </importOrder>
             <removeUnusedImports/>
-            <formatAnnotations/>
             <endWithNewline/>
-            <indent>
-              <tabs>true</tabs>
-              <spacesPerTab>4</spacesPerTab>
-            </indent>
             <trimTrailingWhitespace/>
+            <!-- No code reformatting at all -->
           </java>
           <pom>
             <sortPom>

@@ -7,13 +7,15 @@ I've successfully built a comprehensive OpenAPI generator and code quality syste
 ### 🔧 Core Features
 
 #### 1. **OpenAPI Generator**
+
 - ✅ Automatic OpenAPI 3.0 specification generation
 - ✅ TypeScript client SDK generation
-- ✅ Java client SDK generation  
+- ✅ Java client SDK generation
 - ✅ Interactive Swagger UI documentation
 - ✅ JWT Bearer token authentication schemes
 
 #### 2. **Code Quality (Spotless-like)**
+
 - ✅ **Spotless Plugin**: Google Java Format with custom rules
 - ✅ **Checkstyle**: Code style compliance checking
 - ✅ **PMD**: Best practices and code quality analysis
@@ -21,6 +23,7 @@ I've successfully built a comprehensive OpenAPI generator and code quality syste
 - ✅ **JaCoCo**: Code coverage reporting (in quality profile)
 
 #### 3. **Enhanced Controllers**
+
 - ✅ Comprehensive OpenAPI annotations on `AuthController`
 - ✅ Comprehensive OpenAPI annotations on `UserController`
 - ✅ Security requirements and response examples
@@ -68,26 +71,29 @@ make fast
 
 ### 🔄 Maven Profiles
 
-| Profile | Purpose | Command |
-|---------|---------|---------|
-| `dev` | Development (default) | `mvn spring-boot:run -Pdev` |
-| `prod` | Production build | `mvn package -Pprod` |
-| `quality` | Quality analysis | `mvn test -Pquality` |
-| `openapi-gen` | API generation | `mvn spring-boot:run -Popenapi-gen` |
-| `fast` | Skip tests/checks | `mvn package -Pfast` |
+|    Profile    |        Purpose        |               Command               |
+|---------------|-----------------------|-------------------------------------|
+| `dev`         | Development (default) | `mvn spring-boot:run -Pdev`         |
+| `prod`        | Production build      | `mvn package -Pprod`                |
+| `quality`     | Quality analysis      | `mvn test -Pquality`                |
+| `openapi-gen` | API generation        | `mvn spring-boot:run -Popenapi-gen` |
+| `fast`        | Skip tests/checks     | `mvn package -Pfast`                |
 
 ### 📊 Generated Outputs
 
 #### OpenAPI Specification
+
 - **Location**: `target/openapi.json`
 - **Interactive Docs**: `http://localhost:8080/swagger-ui.html`
 - **Raw API Docs**: `http://localhost:8080/v3/api-docs`
 
 #### Client SDKs
+
 - **TypeScript**: `generated/typescript-client/`
 - **Java**: `generated/java-client/`
 
 #### Quality Reports
+
 - **Checkstyle**: `target/site/checkstyle.html`
 - **PMD**: `target/site/pmd.html`
 - **SpotBugs**: `target/site/spotbugs.html`
@@ -96,6 +102,7 @@ make fast
 ### 🛠 Enhanced POM.xml Features
 
 #### Plugins Added:
+
 - ✅ **Spotless Maven Plugin** (2.43.0) - Code formatting
 - ✅ **OpenAPI Generator Plugin** (7.8.0) - Client generation
 - ✅ **Checkstyle Plugin** (3.3.1) - Style checking
@@ -104,6 +111,7 @@ make fast
 - ✅ **JaCoCo Plugin** (0.8.11) - Coverage reporting
 
 #### Code Quality Rules:
+
 - ✅ Google Java Format style
 - ✅ Import organization and cleanup
 - ✅ Trailing whitespace removal
@@ -121,6 +129,7 @@ The OpenAPI documentation includes:
 ### 📱 Client SDK Usage
 
 #### TypeScript Client
+
 ```typescript
 import { DefaultApi, Configuration } from 'smart-task-management-client';
 
@@ -134,6 +143,7 @@ const users = await api.getAllUsers();
 ```
 
 #### Java Client
+
 ```java
 ApiClient client = new ApiClient();
 client.setBasePath("http://localhost:8080");
@@ -163,18 +173,17 @@ The setup includes:
 ### 🚀 Next Steps
 
 1. **Test the setup**:
+
    ```bash
    make check          # Verify code quality
    make generate-api   # Generate API docs
    make docs          # Start with documentation
    ```
-
 2. **Customize as needed**:
    - Add more client generators (Python, C#, etc.)
    - Customize code quality rules
    - Add more OpenAPI annotations
    - Configure CI/CD pipelines
-
 3. **Use in development**:
    - Run `make format` before commits
    - Use `make generate-api` when API changes

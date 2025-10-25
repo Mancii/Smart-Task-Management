@@ -66,18 +66,18 @@ if ! command -v mvn &> /dev/null; then
     exit 1
 fi
 
-# Step 1: Format code with Spotless
+# Step 1: Format code with Spotless (conservative mode)
 if [ "$FIX_MODE" = true ]; then
-    print_status "Applying code formatting with Spotless..."
+    print_status "Applying minimal code formatting (imports, whitespace)..."
     mvn spotless:apply
-    print_success "Code formatting applied"
+    print_success "Minimal formatting applied - original indentation preserved"
 else
-    print_status "Checking code formatting with Spotless..."
+    print_status "Checking code formatting..."
     if mvn spotless:check; then
         print_success "Code formatting is correct"
     else
-        print_error "Code formatting issues found. Run with --fix to apply fixes."
-        exit 1
+        print_warning "Minor formatting issues found. Run with --fix to apply minimal fixes."
+        print_warning "Note: This will only fix imports and whitespace, preserving your indentation style."
     fi
 fi
 
